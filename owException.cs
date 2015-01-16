@@ -5,12 +5,10 @@ namespace OneWireAPI
     [Serializable]
     public class owException : Exception
     {
-        #region Enumerations
-
-        public enum owExceptionFunction
+        public enum ExceptionFunction
         {
             Access,
-            CRC,
+            Crc,
             ReadBit,
             ReadByte,
             Select,
@@ -20,19 +18,11 @@ namespace OneWireAPI
             SetLevel
         }
 
-        #endregion
-
-        #region Private member variables
-
         private readonly int _errorNumber;
-        private readonly owExceptionFunction _errorFunction;
-        private readonly owIdentifier _deviceID;
+        private readonly ExceptionFunction _errorFunction;
+        private readonly owIdentifier _deviceId;
 
-        #endregion
-
-        #region Constructors
-
-        public owException(owExceptionFunction function, int number)
+        public owException(ExceptionFunction function, int number)
         {
             // Store the exception function
             _errorFunction = function;
@@ -41,37 +31,33 @@ namespace OneWireAPI
             _errorNumber = number;
         }
 
-        public owException(owExceptionFunction function, owIdentifier deviceID)
+        public owException(ExceptionFunction function, owIdentifier deviceId)
         {
             // Store the exception function
             _errorFunction = function;
 
             // Store the device ID
-            _deviceID = deviceID;
+            _deviceId = deviceId;
         }
 
-        public owException(owExceptionFunction function, owIdentifier deviceID, int number)
+        public owException(ExceptionFunction function, owIdentifier deviceId, int number)
         {
             // Store the exception function
             _errorFunction = function;
 
             // Store the device ID
-            _deviceID = deviceID;
+            _deviceId = deviceId;
 
             // Store the exception number
             _errorNumber = number;
         }
 
-        #endregion
-
-        #region Properties
-
-        public owIdentifier DeviceID
+        public owIdentifier DeviceId
         {
-            get { return _deviceID; }
+            get { return _deviceId; }
         }
 
-        public owExceptionFunction Function
+        public ExceptionFunction Function
         {
             get { return _errorFunction; }
         }
@@ -82,16 +68,26 @@ namespace OneWireAPI
             {
                 switch (_errorFunction)
                 {
-                    case owExceptionFunction.Access:        return "Unable to access device";
-                    case owExceptionFunction.CRC:           return "CRC mismatch";
-                    case owExceptionFunction.ReadBit:       return "Error reading bit";
-                    case owExceptionFunction.ReadByte:      return "Error reading byte";
-                    case owExceptionFunction.Select:        return "Unable to select device";
-                    case owExceptionFunction.SendBit:       return "Error sending bit";
-                    case owExceptionFunction.SendBlock:     return "Error sending block";
-                    case owExceptionFunction.SendByte:      return "Error sending byte";
-                    case owExceptionFunction.SetLevel:      return "Error setting level";
-                    default:                                return "Unknown error in function" + _errorFunction;
+                    case ExceptionFunction.Access:
+                        return "Unable to access device";
+                    case ExceptionFunction.Crc:
+                        return "CRC mismatch";
+                    case ExceptionFunction.ReadBit:
+                        return "Error reading bit";
+                    case ExceptionFunction.ReadByte:
+                        return "Error reading byte";
+                    case ExceptionFunction.Select:
+                        return "Unable to select device";
+                    case ExceptionFunction.SendBit:
+                        return "Error sending bit";
+                    case ExceptionFunction.SendBlock:
+                        return "Error sending block";
+                    case ExceptionFunction.SendByte:
+                        return "Error sending byte";
+                    case ExceptionFunction.SetLevel:
+                        return "Error setting level";
+                    default:
+                        return "Unknown error in function" + _errorFunction;
                 }
             }
         }
@@ -100,7 +96,5 @@ namespace OneWireAPI
         {
             get { return _errorNumber; }
         }
-
-        #endregion
     }
 }

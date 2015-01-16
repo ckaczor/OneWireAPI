@@ -1,16 +1,8 @@
-using System;
-
 namespace OneWireAPI
 {
     internal class owCRC16
     {
-        #region CRC lookup table
-
-        private static short[] m_aOddParity = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
-
-        #endregion
-
-        #region Methods
+        private static readonly short[] OddParity = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
 
         public static int Calculate(byte[] nData, int iStart, int iEnd)
         {
@@ -19,7 +11,7 @@ namespace OneWireAPI
 
         public static int Calculate(byte nData, int iInitialValue)
         {
-            byte[] aData = new byte[1];
+            var aData = new byte[1];
 
             aData[0] = nData;
 
@@ -28,34 +20,32 @@ namespace OneWireAPI
 
         public static int Calculate(byte[] nData, int iStart, int iEnd, int iInitialValue)
         {
-            int iIndex;								// Loop index
-            int iCurrentCRC = iInitialValue;	// Current CRC accumulator
+            int index;								// Loop index
+            var currentCrc = iInitialValue;	        // Current CRC accumulator
 
             // Loop over all bytes in the input array
-            for (iIndex = iStart; iIndex <= iEnd; iIndex++)
+            for (index = iStart; index <= iEnd; index++)
             {
                 // Get the current element of data
-                int iBuffer = nData[iIndex];
+                int iBuffer = nData[index];
 
                 // Calculate the current CRC for this position
-                iBuffer = (iBuffer ^ (iCurrentCRC & 0xFF)) & 0xFF;
+                iBuffer = (iBuffer ^ (currentCrc & 0xFF)) & 0xFF;
 
-                iCurrentCRC >>= 8;
+                currentCrc >>= 8;
 
-                if ((m_aOddParity[iBuffer & 0xF] ^ m_aOddParity[iBuffer >> 4]) != 0)
-                    iCurrentCRC ^= 0xC001;
+                if ((OddParity[iBuffer & 0xF] ^ OddParity[iBuffer >> 4]) != 0)
+                    currentCrc ^= 0xC001;
 
                 iBuffer <<= 6;
-                iCurrentCRC ^= iBuffer;
+                currentCrc ^= iBuffer;
 
                 iBuffer <<= 1;
-                iCurrentCRC ^= iBuffer;
+                currentCrc ^= iBuffer;
             }
 
             // Return the final CRC value
-            return iCurrentCRC;
+            return currentCrc;
         }
-
-        #endregion
     }
 }

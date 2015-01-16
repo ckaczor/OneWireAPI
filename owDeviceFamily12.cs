@@ -1,199 +1,184 @@
-using System;
-
 namespace OneWireAPI
 {
-	public class owDeviceFamily12 : owDevice
-	{
-		#region Constants
+    public class owDeviceFamily12 : owDevice
+    {
+        private const byte ChannelAccessCommand = 0xF5;
+        private const byte WriteStatusCommand = 0x55;
+        private const byte ReadStatusCommand = 0xAA;
 
-		private const byte	CHANNEL_ACCESS_COMMAND		= 0xF5;			// Command value to access a channel
-		private const byte	WRITE_STATUS_COMMAND		= 0x55;			// Command value to write the status
-		private const byte	READ_STATUS_COMMAND			= 0xAA;			// Command value to read the status
+        public owDeviceFamily12(owSession session, short[] id)
+            : base(session, id)
+        {
+            // Just call the base constructor
+        }
 
-		#endregion
-		
-		#region Constructor
+        public bool IsPowered(byte[] state)
+        {
+            return ((state[0] & 0x80) == 0x80);
+        }
 
-		public owDeviceFamily12(owSession Session, short[] ID) : base(Session, ID)
-		{
-			// Just call the base constructor
-		}
+        public bool GetLevel(int channel, byte[] state)
+        {
+            if (channel == 0)
+                return ((state[0] & 0x04) == 0x04);
 
-		#endregion
+            return ((state[0] & 0x08) == 0x08);
+        }
 
-		#region Methods
+        public bool GetLatchState(int channel, byte[] state)
+        {
+            if (channel == 0)
+                return ((state[1] & 0x20) != 0x20);
 
-		public bool IsPowered(byte[] State)
-		{
-			return ((State[0] & 0x80) == 0x80);
-		}
+            return ((state[1] & 0x40) != 0x40);
+        }
 
-		public bool GetLevel(int Channel, byte[] State)
-		{
-			if (Channel == 0)
-				return ((State[0] & 0x04) == 0x04);
-			else
-				return ((State[0] & 0x08) == 0x08);
-		}
+        public void SetLatchState(int channel, bool latchState, byte[] state)
+        {
+            if (channel == 0)
+            {
+                state[1] &= 0xDF;
 
-		public bool GetLatchState(int Channel, byte[] State)
-		{
-			if (Channel == 0)
-			{
-				return ((State[1] & 0x20) != 0x20);
-			}
-			else
-			{
-				return ((State[1] & 0x40) != 0x40);
-			}
-		}
+                if (!latchState)
+                    state[1] = (byte) (state[1] | 0x20);
+            }
+            else
+            {
+                state[1] &= 0xBF;
 
-		public void SetLatchState(int Channel, bool LatchState, byte[] State)
-		{
-			if (Channel == 0)
-			{
-				State[1] &= 0xDF;
-				
-				if (!LatchState)	State[1] = (byte) (State[1] | 0x20);
-			}
-			else
-			{
-				State[1] &= 0xBF;
-				
-				if (!LatchState)	State[1] = (byte) (State[1] | 0x40);
-			}
-		}
+                if (!latchState)
+                    state[1] = (byte) (state[1] | 0x40);
+            }
+        }
 
-		public byte[] ReadDevice()
-		{
-			byte[]		State				= new byte[2];
-			byte[]		aData				= new byte[30];		// Data buffer to send over the network
-			short		nDataCount			= 0;				// How many bytes of data to send
-			int			iCRCResult;								// Result of the CRC calculation
-			int			iMatchCRC;								// CRC retrieved from the device
+        public byte[] ReadDevice()
+        {
+            // Select and access the ID of the device we want to talk to
+            owAdapter.Select(DeviceId);
 
-			// Select and access the ID of the device we want to talk to
-			owAdapter.Select(_deviceID);
+            // Data buffer to send over the network
+            var data = new byte[30];
 
-			// Set the commmand to execute
-			aData[nDataCount++] = CHANNEL_ACCESS_COMMAND;
+            // How many bytes of data to send
+            short dataCount = 0;
 
-			// Set the data
-			aData[nDataCount++] = 0x55;
-			aData[nDataCount++] = 0xFF;
+            // Set the commmand to execute
+            data[dataCount++] = ChannelAccessCommand;
 
-			// Read the info, dummy data and CRC16
-			for (int i = 3; i < 7; i++)
-				aData[nDataCount++] = 0xFF;
+            // Set the data
+            data[dataCount++] = 0x55;
+            data[dataCount++] = 0xFF;
 
-			// Send the data
-			owAdapter.SendBlock(aData, nDataCount);
+            // Read the info, dummy data and CRC16
+            for (var i = 3; i < 7; i++)
+                data[dataCount++] = 0xFF;
 
-			// Calculate the CRC
-			iCRCResult = owCRC16.Calculate(aData, 0, 4);
+            // Send the data
+            owAdapter.SendBlock(data, dataCount);
 
-			// Assemble the CRC provided by the device
-			iMatchCRC = aData[6] << 8;
-			iMatchCRC |= aData[5];
-			iMatchCRC ^= 0xFFFF;
+            // Calculate the CRC
+            var crcResult = owCRC16.Calculate(data, 0, 4);
 
-			// Make sure the CRC values match
-			if (iCRCResult != iMatchCRC)
-			{
-				// Throw a CRC exception
-				throw new owException(owException.owExceptionFunction.CRC, _deviceID);
-			}
+            // Assemble the CRC provided by the device
+            var matchCrc = data[6] << 8;
+            matchCrc |= data[5];
+            matchCrc ^= 0xFFFF;
 
-			// Store the state data			
-			State[0] = aData[3];
+            // Make sure the CRC values match
+            if (crcResult != matchCrc)
+            {
+                // Throw a CRC exception
+                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+            }
 
-			// Reset the data count
-			nDataCount = 0;
+            var state = new byte[2];
 
-			// Set the command
-			aData[nDataCount++] = READ_STATUS_COMMAND;
+            // Store the state data			
+            state[0] = data[3];
 
-			// Set the address to read
-			aData[nDataCount++] = 7;
-			aData[nDataCount++] = 0;
+            // Reset the data count
+            dataCount = 0;
 
-			// Add data for the CRC
-			for (int i = 3; i < 6; i++)  
-				aData[nDataCount++] = 0xFF;
+            // Set the command
+            data[dataCount++] = ReadStatusCommand;
 
-			// Select and access the ID of the device we want to talk to
-			owAdapter.Select(_deviceID);
+            // Set the address to read
+            data[dataCount++] = 7;
+            data[dataCount++] = 0;
 
-			// Send the data
-			owAdapter.SendBlock(aData, nDataCount);
+            // Add data for the CRC
+            for (var i = 3; i < 6; i++)
+                data[dataCount++] = 0xFF;
 
-			// Calculate the CRC
-			iCRCResult = owCRC16.Calculate(aData, 0, 3);
+            // Select and access the ID of the device we want to talk to
+            owAdapter.Select(DeviceId);
 
-			// Assemble the CRC provided by the device
-			iMatchCRC = aData[5] << 8;
-			iMatchCRC |= aData[4];
-			iMatchCRC ^= 0xFFFF;
+            // Send the data
+            owAdapter.SendBlock(data, dataCount);
 
-			// Make sure the CRC values match
-			if (iCRCResult != iMatchCRC)
-			{
-				// Throw a CRC exception
-				throw new owException(owException.owExceptionFunction.CRC, _deviceID);
-			}
+            // Calculate the CRC
+            crcResult = owCRC16.Calculate(data, 0, 3);
 
-			// Store the state data
-			State[1] = aData[3];
+            // Assemble the CRC provided by the device
+            matchCrc = data[5] << 8;
+            matchCrc |= data[4];
+            matchCrc ^= 0xFFFF;
 
-			return State;
-		}
+            // Make sure the CRC values match
+            if (crcResult != matchCrc)
+            {
+                // Throw a CRC exception
+                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+            }
 
-		public void WriteDevice(byte[] State)
-		{
-			short		nResult;								// Result of method calls
-			byte[]		aData				= new byte[30];		// Data buffer to send over the network
-			short		nDataCount			= 0;				// How many bytes of data to send
-			int			iCRCResult;								// Result of the CRC calculation
-			int			iMatchCRC;								// CRC retrieved from the device
+            // Store the state data
+            state[1] = data[3];
 
-			// Select and access the ID of the device we want to talk to
-			owAdapter.Select(_deviceID);
+            return state;
+        }
 
-			// Set the commmand to execute
-			aData[nDataCount++] = WRITE_STATUS_COMMAND;
+        public void WriteDevice(byte[] state)
+        {
+            // Select and access the ID of the device we want to talk to
+            owAdapter.Select(DeviceId);
 
-			// Set the address
-			aData[nDataCount++] = 0x07;
-			aData[nDataCount++] = 0x00;
+            // Data buffer to send over the network
+            var data = new byte[30];
 
-			// Add the state
-			aData[nDataCount++] = State[1];
+            // How many bytes of data to send
+            short dataCount = 0;
 
-			// Add bytes for the CRC result
-			aData[nDataCount++] = 0xFF;
-			aData[nDataCount++] = 0xFF;
+            // Set the commmand to execute
+            data[dataCount++] = WriteStatusCommand;
 
-			// Send the data
-			nResult = owAdapter.SendBlock(aData, nDataCount);
+            // Set the address
+            data[dataCount++] = 0x07;
+            data[dataCount++] = 0x00;
 
-			// Calculate the CRC
-			iCRCResult = owCRC16.Calculate(aData, 0, 3);
+            // Add the state
+            data[dataCount++] = state[1];
 
-			// Assemble the CRC provided by the device
-			iMatchCRC = aData[5] << 8;
-			iMatchCRC |= aData[4];
-			iMatchCRC ^= 0xFFFF;
+            // Add bytes for the CRC result
+            data[dataCount++] = 0xFF;
+            data[dataCount++] = 0xFF;
 
-			// Make sure the CRC values match
-			if (iCRCResult != iMatchCRC)
-			{
-				// Throw a CRC exception
-				throw new owException(owException.owExceptionFunction.CRC, _deviceID);
-			}
+            // Send the data
+            owAdapter.SendBlock(data, dataCount);
 
-			return;
-		}
+            // Calculate the CRC
+            var crcResult = owCRC16.Calculate(data, 0, 3);
 
-		#endregion
-	}
+            // Assemble the CRC provided by the device
+            var matchCrc = data[5] << 8;
+            matchCrc |= data[4];
+            matchCrc ^= 0xFFFF;
+
+            // Make sure the CRC values match
+            if (crcResult != matchCrc)
+            {
+                // Throw a CRC exception
+                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+            }
+        }
+    }
 }

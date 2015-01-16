@@ -1,76 +1,52 @@
-using System;
-
 namespace OneWireAPI
 {
-	internal class owCRC8
-	{
-		#region Member variables
+    internal class owCRC8
+    {
+        private static byte[] _dataTable;		// Lookup table of CRC8 values
 
-		private static byte[]		m_aDataTable;		// Lookup table of CRC8 values
+        static owCRC8()
+        {
+            // Initialize the CRC lookup table
+            InitializeCrcTable();
+        }
 
-		#endregion
+        private static void InitializeCrcTable()
+        {
+            // Initialize the size of the lookup table
+            _dataTable = new byte[256];
 
-		#region Constructor
+            for (var outer = 0; outer < 256; outer++)
+            {
+                var accumulator = outer;    // Accumulator value
+                var crc = 0;				// CRC value
 
-		static owCRC8()
-		{
-			// Initialize the CRC lookup table
-			InitializeCRCTable();
-		}
+                for (var inner = 0; inner < 8; inner++)
+                {
+                    if (((accumulator ^ crc) & 0x01) == 0x01)
+                        crc = ((crc ^ 0x18) >> 1) | 0x80;
+                    else
+                        crc = crc >> 1;
 
-		#endregion
+                    accumulator = accumulator >> 1;
+                }
 
-		#region Private methods
+                _dataTable[outer] = (byte) crc;
+            }
+        }
 
-		private static void InitializeCRCTable()
-		{
-			int		iAccumulator;		// Accumulator value
-			int		iCRC;				// CRC value
-			int		iOuter;				// Outer loop control
-			int		iInner;				// Inner loop control
+        public static short Calculate(byte[] data, int start, int end)
+        {
+            var currentCrc = (short) 0;     // Current CRC accumulator
 
-			// Initialize the size of the lookup table
-			m_aDataTable = new byte[256];
+            // Loop over all bytes in the input array
+            for (var index = start; index <= end; index++)
+            {
+                // Calculate the current CRC for this position
+                currentCrc = _dataTable[currentCrc ^ data[index]];
+            }
 
-			for (iOuter = 0; iOuter < 256; iOuter++)
-			{
-				iAccumulator = iOuter;
-				iCRC = 0;
-
-				for (iInner = 0; iInner < 8; iInner++)
-				{
-					if (((iAccumulator ^ iCRC) & 0x01) == 0x01)
-						iCRC = ((iCRC ^ 0x18) >> 1) | 0x80;
-					else
-						iCRC = iCRC >> 1;
-
-					iAccumulator = iAccumulator >> 1;
-				}
-
-				m_aDataTable[iOuter] = (byte) iCRC;
-			}
-		}
-
-		#endregion
-
-		#region Public methods
-
-		public static short Calculate(byte[] nData, int iStart, int iEnd)
-		{
-			int		iIndex;						// Loop index
-			short	nCurrentCRC		= 0;		// Current CRC accumulator
-
-			// Loop over all bytes in the input array
-			for (iIndex = iStart; iIndex <= iEnd; iIndex++)
-			{
-				// Calculate the current CRC for this position
-				nCurrentCRC = m_aDataTable[nCurrentCRC ^ nData[iIndex]];
-			}
-
-			// Return the final CRC value
-			return nCurrentCRC;			
-		}
-
-		#endregion
-	}
+            // Return the final CRC value
+            return currentCrc;
+        }
+    }
 }

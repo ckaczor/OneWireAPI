@@ -1,41 +1,27 @@
-using System;
-
 namespace OneWireAPI
 {
-    public class owDevice 
+    public class owDevice
     {
-        #region Member variables
+        protected owSession Session;
+        protected owIdentifier DeviceId;
 
-        protected owSession _session;               // The current session
-        protected owIdentifier _deviceID;           // The ID of this device
-
-        #endregion
-
-        #region Constructor
-
-        public owDevice(owSession session, short[] rawID)
+        public owDevice(owSession session, short[] rawId)
         {
             // Store the session
-            _session = session;
+            Session = session;
 
             // Create a new identifier and give it the ID supplied
-            _deviceID = new owIdentifier(rawID);
+            DeviceId = new owIdentifier(rawId);
         }
 
-        #endregion
-
-        #region Properties
-
-        public owIdentifier ID
+        public owIdentifier Id
         {
-            get { return _deviceID; }
+            get { return DeviceId; }
         }
 
         public int Family
         {
-            get { return _deviceID.Family; }
+            get { return DeviceId.Family; }
         }
-
-        #endregion
     }
 }

@@ -1,277 +1,262 @@
-using System;
-
 namespace OneWireAPI
 {
-	public class owDeviceFamily26 : owDevice
-	{
-		#region Constructor
-
-		public owDeviceFamily26(owSession Session, short[] ID) : base(Session, ID)
-		{
-			// Just call the base constructor
-		}
+    public class owDeviceFamily26 : owDevice
+    {
+        public owDeviceFamily26(owSession session, short[] id)
+            : base(session, id)
+        {
+            // Just call the base constructor
+        }
 
-		#endregion
+        public enum VoltageType : short
+        {
+            Supply,
+            Output
+        }
 
-		#region Methods
+        private double GetVoltage(VoltageType type)
+        {
+            short busy;
 
-		public enum VoltageType : short
-		{
-			Supply,
-			Output
-		}
-
-		private double GetVoltage(VoltageType Type)
-		{
-			short		nResult;								// Result of method calls
-			byte[]		aData				= new byte[30];		// Data buffer to send over the network
-			short		nDataCount			= 0;				// How many bytes of data to send
-			short		nCRC;									// Result of the CRC check
-			int			iIndex;
-			short		nBusy;
-			double		dVoltage;
+            // Select and access the ID of the device we want to talk to
+            owAdapter.Select(DeviceId);
 
-			// Select and access the ID of the device we want to talk to
-			owAdapter.Select(_deviceID);
-
-			// Set the command to recall the status/configuration page to the scratchpad
-			aData[nDataCount++] = 0xB8;
-
-			// Set the page number to recall
-			aData[nDataCount++] = 0x00;
-
-			// Send the data block
-			nResult = owAdapter.SendBlock(aData, nDataCount);
+            // Data buffer to send over the network
+            var data = new byte[30];
 
-			// Clear the data count
-			nDataCount = 0;
+            // How many bytes of data to send
+            short dataCount = 0;
 
-			// Access the device we want to talk to
-			owAdapter.Access();
+            // Set the command to recall the status/configuration page to the scratchpad
+            data[dataCount++] = 0xB8;
 
-			// Set the command to read the scratchpad
-			aData[nDataCount++] = 0xBE;
+            // Set the page number to recall
+            data[dataCount++] = 0x00;
 
-			// Set the page number to read
-			aData[nDataCount++] = 0x00;
+            // Send the data block
+            owAdapter.SendBlock(data, dataCount);
 
-			// Add 9 bytes to be read - 8 for the data and 1 for the CRC
-			for (iIndex = 0; iIndex < 9; iIndex++)
-				aData[nDataCount++] = 0xFF;
+            // Clear the data count
+            dataCount = 0;
 
-			// Send the data block
-			nResult = owAdapter.SendBlock(aData, nDataCount);
+            // Access the device we want to talk to
+            owAdapter.Access();
 
-			// Calculate the CRC of the scratchpad data
-			nCRC = owCRC8.Calculate(aData, 2, 9);
+            // Set the command to read the scratchpad
+            data[dataCount++] = 0xBE;
 
-			// If the CRC doesn't match then throw an exception
-			if (nCRC != aData[10])
-			{
-				// Throw a CRC exception
-				throw new owException(owException.owExceptionFunction.CRC, _deviceID);
-			}			
+            // Set the page number to read
+            data[dataCount++] = 0x00;
 
-			// TODO - Check if we really need to change the input selector
-			if (true)
-			{
-				// Access the device we want to talk to
-				owAdapter.Access();
+            // Add 9 bytes to be read - 8 for the data and 1 for the CRC
+            for (var index = 0; index < 9; index++)
+                data[dataCount++] = 0xFF;
 
-				// Reset the data count
-                nDataCount = 0;
+            // Send the data block
+            owAdapter.SendBlock(data, dataCount);
 
-				// Set the command to write the scratchpad
-				aData[nDataCount++] = 0x4E;
-
-				// Set the page number to write
-				aData[nDataCount++] = 0x00;
+            // Calculate the CRC of the scratchpad data
+            var crc = owCRC8.Calculate(data, 2, 9);
 
-				// Set or clear the AD bit based on the type requested
-				if (Type == VoltageType.Supply)
-					aData[nDataCount++] = (byte) (aData[2] | 0x08);
-				else
-					aData[nDataCount++] = (byte) (aData[2] & 0xF7);
-
-				// Move the existing data down in the array
-				for (iIndex = 0; iIndex < 7; iIndex++)
-					aData[nDataCount++] = aData[iIndex + 4];
-
-				// Send the data block
-				nResult = owAdapter.SendBlock(aData, nDataCount);
-
-				// Reset the data count
-				nDataCount = 0;
-				
-				// Access the device we want to talk to
-				owAdapter.Access();
-
-				// Set the command to copy the scratchpad
-				aData[nDataCount++] = 0x48;
-
-				// Set the page number to copy to
-				aData[nDataCount++] = 0x00;
-
-				// Send the data block
-				nResult = owAdapter.SendBlock(aData, nDataCount);
-
-				// Loop until the data copy is complete
-				do
-				{
-					nBusy = owAdapter.ReadByte();
-				}
-				while (nBusy == 0);
-			}
-
-			// Access the device we want to talk to
-			owAdapter.Access();
-
-			// Send the voltage conversion command
-			owAdapter.SendByte(0xB4);
-
-			// Loop until conversion is complete
-			do
-			{
-				nBusy = owAdapter.ReadByte();
-			}
-			while (nBusy == 0);
+            // If the CRC doesn't match then throw an exception
+            if (crc != data[10])
+            {
+                // Throw a CRC exception
+                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+            }
 
-			// Clear the data count
-			nDataCount = 0;
+            // TODO - Check if we really need to change the input selector
+            if (true)
+            {
+                // Access the device we want to talk to
+                owAdapter.Access();
 
-			// Set the command to recall the status/configuration page to the scratchpad
-			aData[nDataCount++] = 0xB8;
+                // Reset the data count
+                dataCount = 0;
 
-			// Set the page number to recall
-			aData[nDataCount++] = 0x00;
+                // Set the command to write the scratchpad
+                data[dataCount++] = 0x4E;
 
-			// Access the device we want to talk to
-			owAdapter.Access();
+                // Set the page number to write
+                data[dataCount++] = 0x00;
 
-			// Send the data block
-			nResult = owAdapter.SendBlock(aData, nDataCount);
+                // Set or clear the AD bit based on the type requested
+                if (type == VoltageType.Supply)
+                    data[dataCount++] = (byte) (data[2] | 0x08);
+                else
+                    data[dataCount++] = (byte) (data[2] & 0xF7);
 
-			// Clear the data count
-			nDataCount = 0;
+                // Move the existing data down in the array
+                for (var index = 0; index < 7; index++)
+                    data[dataCount++] = data[index + 4];
 
-			// Access the device we want to talk to
-			owAdapter.Access();
+                // Send the data block
+                owAdapter.SendBlock(data, dataCount);
 
-			// Set the command to read the scratchpad
-			aData[nDataCount++] = 0xBE;
+                // Reset the data count
+                dataCount = 0;
 
-			// Set the page number to read
-			aData[nDataCount++] = 0x00;
+                // Access the device we want to talk to
+                owAdapter.Access();
 
-			// Add 9 bytes to be read - 8 for the data and 1 for the CRC
-			for (iIndex = 0; iIndex < 9; iIndex++)
-				aData[nDataCount++] = 0xFF;
+                // Set the command to copy the scratchpad
+                data[dataCount++] = 0x48;
 
-			// Send the data block
-			nResult = owAdapter.SendBlock(aData, nDataCount);
+                // Set the page number to copy to
+                data[dataCount++] = 0x00;
 
-			// Calculate the CRC of the scratchpad data
-			nCRC = owCRC8.Calculate(aData, 2, 9);
+                // Send the data block
+                owAdapter.SendBlock(data, dataCount);
 
-			// If the CRC doesn't match then throw an exception
-			if (nCRC != aData[10])
-			{
-				// Throw a CRC exception
-				throw new owException(owException.owExceptionFunction.CRC, _deviceID);
-			}			
-			
-			// Assemble the voltage data
-			dVoltage = (double) ((aData[6] << 8) | aData[5]);
-		
-			return dVoltage / 100;
-		}
+                // Loop until the data copy is complete
+                do
+                {
+                    busy = owAdapter.ReadByte();
+                }
+                while (busy == 0);
+            }
 
-		public double GetSupplyVoltage()
-		{
-			return GetVoltage(VoltageType.Supply);
-		}
+            // Access the device we want to talk to
+            owAdapter.Access();
 
-		public double GetOutputVoltage()
-		{
+            // Send the voltage conversion command
+            owAdapter.SendByte(0xB4);
 
-			return GetVoltage(VoltageType.Output);
-		}
+            // Loop until conversion is complete
+            do
+            {
+                busy = owAdapter.ReadByte();
+            }
+            while (busy == 0);
 
-		public double GetTemperature()
-		{
-			short		nResult;								// Result of method calls
-			byte[]		aData				= new byte[30];		// Data buffer to send over the network
-			short		nDataCount			= 0;				// How many bytes of data to send
-			short		nCRC;									// Result of the CRC check
-			int			iTemperatureLSB;						// The LSB of the temperature data 
-			int			iTemperatureMSB;						// The MSB of the temperature data
-			int			iTemperature;							// Complete temperature data
-			double		dTemperature;							// double version of the temperature
+            // Clear the data count
+            dataCount = 0;
 
-			// Select and access the ID of the device we want to talk to
-			owAdapter.Select(_deviceID);
+            // Set the command to recall the status/configuration page to the scratchpad
+            data[dataCount++] = 0xB8;
 
-			// Send the conversion command byte 
-			owAdapter.SendByte(0x44);
+            // Set the page number to recall
+            data[dataCount++] = 0x00;
 
-			// Sleep while the data is converted
-			System.Threading.Thread.Sleep(10);
+            // Access the device we want to talk to
+            owAdapter.Access();
 
-			// Access the device we want to talk to
-			owAdapter.Access();
+            // Send the data block
+            owAdapter.SendBlock(data, dataCount);
 
-			// Set the command to recall the status/configuration page to the scratchpad
-			aData[nDataCount++] = 0xB8;
+            // Clear the data count
+            dataCount = 0;
 
-			// Set the page number to recall
-			aData[nDataCount++] = 0x00;
+            // Access the device we want to talk to
+            owAdapter.Access();
 
-			// Send the data block
-			nResult = owAdapter.SendBlock(aData, nDataCount);
+            // Set the command to read the scratchpad
+            data[dataCount++] = 0xBE;
 
-			// Clear the data count
-			nDataCount = 0;
+            // Set the page number to read
+            data[dataCount++] = 0x00;
 
-			// Access the device we want to talk to
-			owAdapter.Access();
+            // Add 9 bytes to be read - 8 for the data and 1 for the CRC
+            for (var index = 0; index < 9; index++)
+                data[dataCount++] = 0xFF;
 
-			// Set the command to read the scratchpad
-			aData[nDataCount++] = 0xBE;
+            // Send the data block
+            owAdapter.SendBlock(data, dataCount);
 
-			// Set the page number to read
-			aData[nDataCount++] = 0x00;
+            // Calculate the CRC of the scratchpad data
+            crc = owCRC8.Calculate(data, 2, 9);
 
-			// Add 9 bytes to be read - 8 for the data and 1 for the CRC
-			for (int iIndex = 0; iIndex < 9; iIndex++)
-				aData[nDataCount++] = 0xFF;
+            // If the CRC doesn't match then throw an exception
+            if (crc != data[10])
+            {
+                // Throw a CRC exception
+                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+            }
 
-			// Send the data block
-			nResult = owAdapter.SendBlock(aData, nDataCount);
+            // Assemble the voltage data
+            var dVoltage = (double) ((data[6] << 8) | data[5]);
 
-			// Calculate the CRC of the scratchpad data
-			nCRC = owCRC8.Calculate(aData, 2, 9);
+            return dVoltage / 100;
+        }
 
-			// If the CRC doesn't match then throw an exception
-			if (nCRC != aData[10])
-			{
-				// Throw a CRC exception
-				throw new owException(owException.owExceptionFunction.CRC, _deviceID);
-			}			
+        public double GetSupplyVoltage()
+        {
+            return GetVoltage(VoltageType.Supply);
+        }
 
-			// Get the two bytes of temperature data
-			iTemperatureLSB = aData[3];
-			iTemperatureMSB = aData[4];
+        public double GetOutputVoltage()
+        {
 
-			// Shift the data into the right order
-			iTemperature = ((iTemperatureMSB << 8) | iTemperatureLSB) >> 3;
+            return GetVoltage(VoltageType.Output);
+        }
 
-			// Figure out the temperature 
-			dTemperature = iTemperature * 0.03125F;
+        public double GetTemperature()
+        {
+            // Select and access the ID of the device we want to talk to
+            owAdapter.Select(DeviceId);
 
-			// Return the temperature
-			return dTemperature;
-		}
+            // Send the conversion command byte 
+            owAdapter.SendByte(0x44);
 
-		#endregion
-	}
+            // Sleep while the data is converted
+            System.Threading.Thread.Sleep(10);
+
+            // Access the device we want to talk to
+            owAdapter.Access();
+
+            // Data buffer to send over the network
+            var data = new byte[30];
+
+            // How many bytes of data to send
+            short dataCount = 0;
+
+            // Set the command to recall the status/configuration page to the scratchpad
+            data[dataCount++] = 0xB8;
+
+            // Set the page number to recall
+            data[dataCount++] = 0x00;
+
+            // Send the data block
+            owAdapter.SendBlock(data, dataCount);
+
+            // Clear the data count
+            dataCount = 0;
+
+            // Access the device we want to talk to
+            owAdapter.Access();
+
+            // Set the command to read the scratchpad
+            data[dataCount++] = 0xBE;
+
+            // Set the page number to read
+            data[dataCount++] = 0x00;
+
+            // Add 9 bytes to be read - 8 for the data and 1 for the CRC
+            for (var iIndex = 0; iIndex < 9; iIndex++)
+                data[dataCount++] = 0xFF;
+
+            // Send the data block
+            owAdapter.SendBlock(data, dataCount);
+
+            // Calculate the CRC of the scratchpad data
+            var crc = owCRC8.Calculate(data, 2, 9);
+
+            // If the CRC doesn't match then throw an exception
+            if (crc != data[10])
+            {
+                // Throw a CRC exception
+                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+            }
+
+            // Get the two bytes of temperature data
+            int temperatureLsb = data[3];
+            int temperatureMsb = data[4];
+
+            // Shift the data into the right order
+            var iTemperature = ((temperatureMsb << 8) | temperatureLsb) >> 3;
+
+            // Return the temperature
+            return iTemperature * 0.03125F;
+        }
+    }
 }

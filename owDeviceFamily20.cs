@@ -1,258 +1,242 @@
-using System;
-
 namespace OneWireAPI
 {
-	public class owDeviceFamily20 : owDevice
-	{
-		#region Member variables
+    public class owDeviceFamily20 : owDevice
+    {
+        private readonly byte[] _control = new byte[16];
 
-		byte[]		m_aControl	=	new byte[16];
+        public enum Range : byte
+        {
+            Range512 = 0x01,
+            Range256 = 0x00
+        }
 
-		#endregion
+        public enum Resolution : byte
+        {
+            EightBits = 0x08,
+            SixteenBits = 0x00
+        }
 
-		#region Enumerations
+        public owDeviceFamily20(owSession session, short[] id)
+            : base(session, id)
+        {
+        }
 
-		public enum owDeviceFamily20Range : byte
-		{
-			Range_512		=	0x01,
-			Range_256		=	0x00
-		}	
+        public void Initialize()
+        {
+            const int startAddress = 0x8;       // Starting data page address
+            const int endAddress = 0x11;        // Ending data page address
 
-		public enum owDeviceFamily20Resolution : byte
-		{
-			EightBits		=	0x08,
-			SixteenBits		=	0x00
-		}
+            // Setup the control page
+            for (var index = 0; index < 8; index += 2)
+            {
+                _control[index] = (byte) Resolution.EightBits;
+                _control[index + 1] = (byte) Range.Range512;
+            }
 
-		#endregion
+            // Clear the alarm page
+            for (var index = 8; index < 16; index++)
+            {
+                _control[index] = 0;
+            }
 
-		#region Constructor
+            // Data buffer to send over the network
+            var data = new byte[30];
 
-		public owDeviceFamily20(owSession Session, short[] ID) : base(Session, ID)
-		{
-		}
+            // How many bytes of data to send
+            short dataCount = 0;
 
-		#endregion
+            // Set the command into the data array
+            data[dataCount++] = 0x55;
 
-		#region Methods
+            // Set the starting address of the data to write
+            data[dataCount++] = startAddress & 0xFF;
+            data[dataCount++] = (startAddress >> 8) & 0xFF;
 
-		public void Initialize()
-		{
-			short		nResult;								// Result of method calls
-			byte[]		aData				= new byte[30];		// Data buffer to send over the network
-			short		nDataCount			= 0;				// How many bytes of data to send
-			int			iIndex;									// Loop index
-			int			iStartAddress		= 0x8;				// Starting data page address
-			int			iEndAddress			= 0x11;				// Ending data page address
-			int			iCalculatedCRC;							// CRC we calculated from sent data
-			int			iSentCRC;								// CRC retrieved from the device
+            // Select and access the ID of the device we want to talk to
+            owAdapter.Select(DeviceId);
 
-			// Setup the control page
-			for (iIndex = 0; iIndex < 8; iIndex += 2)
-			{
-				m_aControl[iIndex] = (byte) owDeviceFamily20Resolution.EightBits;
-				m_aControl[iIndex + 1] = (byte) owDeviceFamily20Range.Range_512;
-			}
+            // Write to the data pages specified
+            for (var index = startAddress; index <= endAddress; index++)
+            {
+                // Copy the control data into our output buffer
+                data[dataCount++] = _control[index - startAddress];
 
-			// Clear the alarm page
-			for (iIndex = 8; iIndex < 16; iIndex++)
-			{
-				m_aControl[iIndex] = 0;
-			}
+                // Add two bytes for the CRC results
+                data[dataCount++] = 0xFF;
+                data[dataCount++] = 0xFF;
 
-			// Set the command into the data array
-			aData[nDataCount++] = 0x55;
+                // Add a byte for the control byte echo
+                data[dataCount++] = 0xFF;
 
-			// Set the starting address of the data to write
-			aData[nDataCount++] = (byte) (iStartAddress & 0xFF);
-			aData[nDataCount++] = (byte) ((iStartAddress >> 8) & 0xFF);
+                // Send the block
+                owAdapter.SendBlock(data, dataCount);
 
-			// Select and access the ID of the device we want to talk to
-			owAdapter.Select(_deviceID);
+                // If the check byte doesn't match then throw an exception
+                if (data[dataCount - 1] != _control[index - startAddress])
+                {
+                    // Throw an exception
+                    throw new owException(owException.ExceptionFunction.SendBlock, DeviceId);
+                }
 
-			// Write to the data pages specified
-			for (iIndex = iStartAddress; iIndex <= iEndAddress; iIndex++)
-			{
-				// Copy the control data into our output buffer
-				aData[nDataCount++] = m_aControl[iIndex - iStartAddress];
+                int calculatedCrc;							// CRC we calculated from sent data
+                int sentCrc;								// CRC retrieved from the device
 
-				// Add two bytes for the CRC results
-				aData[nDataCount++] = 0xFF;
-				aData[nDataCount++] = 0xFF;
+                // Calculate the CRC values
+                if (index == startAddress)
+                {
+                    // Calculate the CRC16 of the data sent
+                    calculatedCrc = owCRC16.Calculate(data, 0, 3);
 
-				// Add a byte for the control byte echo
-				aData[nDataCount++] = 0xFF;
-				
-				// Send the block
-				nResult = owAdapter.SendBlock(aData, nDataCount);
+                    // Reconstruct the CRC sent by the device
+                    sentCrc = data[dataCount - 2] << 8;
+                    sentCrc |= data[dataCount - 3];
+                    sentCrc ^= 0xFFFF;
+                }
+                else
+                {
+                    // Calculate the CRC16 of the data sent
+                    calculatedCrc = owCRC16.Calculate(_control[index - startAddress], index);
 
-				// If the check byte doesn't match then throw an exception
-				if (aData[nDataCount - 1] != m_aControl[iIndex - iStartAddress])
-				{
-					// Throw an exception
-					throw new owException(owException.owExceptionFunction.SendBlock, _deviceID);
-				}
+                    // Reconstruct the CRC sent by the device
+                    sentCrc = data[dataCount - 2] << 8;
+                    sentCrc |= data[dataCount - 3];
+                    sentCrc ^= 0xFFFF;
+                }
 
-				// Calculate the CRC values
-				if (iIndex == iStartAddress)
-				{
-					// Calculate the CRC16 of the data sent
-					iCalculatedCRC = owCRC16.Calculate(aData, 0, 3);
+                // If the CRC doesn't match then throw an exception
+                if (calculatedCrc != sentCrc)
+                {
+                    // Throw a CRC exception
+                    throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+                }
 
-					// Reconstruct the CRC sent by the device
-					iSentCRC = aData[nDataCount - 2] << 8;
-					iSentCRC |= aData[nDataCount - 3];
-					iSentCRC ^= 0xFFFF;
-				}
-				else
-				{
-					// Calculate the CRC16 of the data sent
-					iCalculatedCRC = owCRC16.Calculate(m_aControl[iIndex - iStartAddress], iIndex);
+                // Reset the byte count
+                dataCount = 0;
+            }
+        }
 
-					// Reconstruct the CRC sent by the device
-					iSentCRC = aData[nDataCount - 2] << 8;
-					iSentCRC |= aData[nDataCount - 3];
-					iSentCRC ^= 0xFFFF;
-				}
+        public double[] GetVoltages()
+        {
+            // Select and access the ID of the device we want to talk to
+            owAdapter.Select(DeviceId);
 
-				// If the CRC doesn't match then throw an exception
-				if (iCalculatedCRC != iSentCRC)
-				{
-					// Throw a CRC exception
-					throw new owException(owException.owExceptionFunction.CRC, _deviceID);
-				}
+            // Data buffer to send over the network
+            var data = new byte[30];
 
-				// Reset the byte count
-				nDataCount = 0;
-			}
-		}
+            // How many bytes of data to send
+            short dataCount = 0;
 
-		public double[] GetVoltages()
-		{
-			short		nResult;								// Result of method calls
-			byte[]		aData				= new byte[30];		// Data buffer to send over the network
-			short		nDataCount			= 0;				// How many bytes of data to send
-			int			iCalculatedCRC;							// CRC we calculated from sent data
-			int			iSentCRC;								// CRC retrieved from the device
-			short		nTransmitByte;							// Byte of data with the strong pull-up
-			short		nCheckByte			= 0;				// Byte of data read to see if conversion is done
-			int			iIndex;									// Loop index
-			int			iVoltageReadout;						// Restructed voltage value from memory
-			double[]	dVoltages			= new double[4];	// Voltage values to return
+            // Set the convert command into the transmit buffer
+            data[dataCount++] = 0x3C;
 
-			// Select and access the ID of the device we want to talk to
-			owAdapter.Select(_deviceID);
+            // Set the input mask to get all channels
+            data[dataCount++] = 0x0F;
 
-			// Set the convert command into the transmit buffer
-			aData[nDataCount++] = 0x3C;
+            // Set the read-out control to leave things as they are
+            data[dataCount++] = 0x00;
 
-			// Set the input mask to get all channels
-			aData[nDataCount++] = 0x0F;
+            // Add two bytes for the CRC results
+            data[dataCount++] = 0xFF;
+            data[dataCount++] = 0xFF;
 
-			// Set the read-out control to leave things as they are
-			aData[nDataCount++] = 0x00;
+            // Send the data block
+            owAdapter.SendBlock(data, dataCount);
 
-			// Add two bytes for the CRC results
-			aData[nDataCount++] = 0xFF;
-			aData[nDataCount++] = 0xFF;
+            // Calculate the CRC based on the transmit buffer
+            var calculatedCrc = owCRC16.Calculate(data, 0, 2);
 
-			// Send the data block
-			owAdapter.SendBlock(aData, nDataCount);
+            // Reconstruct the CRC sent by the device
+            var sentCrc = data[4] << 8;
+            sentCrc |= data[3];
+            sentCrc ^= 0xFFFF;
 
-			// Calculate the CRC based on the transmit buffer
-			iCalculatedCRC = owCRC16.Calculate(aData, 0, 2);
+            // If the CRC doesn't match then throw an exception
+            if (calculatedCrc != sentCrc)
+            {
+                // Throw a CRC exception
+                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+            }
 
-			// Reconstruct the CRC sent by the device
-			iSentCRC = aData[4] << 8;
-			iSentCRC |= aData[3];
-			iSentCRC ^= 0xFFFF;
+            // Setup for for power delivery after the next byte
+            owAdapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.StrongPullup, TMEX.LevelPrime.AfterNextByte);
 
-			// If the CRC doesn't match then throw an exception
-			if (iCalculatedCRC != iSentCRC)
-			{
-				// Throw a CRC exception
-				throw new owException(owException.owExceptionFunction.CRC, _deviceID);
-			}
+            var nTransmitByte = (short) ((dataCount - 1) & 0x1F);
 
-			// Setup for for power delivery after the next byte
-			nResult = owAdapter.SetLevel(TMEX.TMOneWireLevelOperation.Write, TMEX.TMOneWireLevelMode.StrongPullup, TMEX.TMOneWireLevelPrime.AfterNextByte);
+            try
+            {
+                // Send the byte and start strong pullup
+                owAdapter.SendByte(nTransmitByte);
+            }
+            catch
+            {
+                // Stop the strong pullup			
+                owAdapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.Normal, TMEX.LevelPrime.Immediate);
 
-			nTransmitByte = (short) ((nDataCount - 1) & 0x1F);
+                // Re-throw the exception
+                throw;
+            }
 
-			try
-			{
-				// Send the byte and start strong pullup
-				owAdapter.SendByte(nTransmitByte);
-			}
-			catch
-			{
-				// Stop the strong pullup			
-				owAdapter.SetLevel(TMEX.TMOneWireLevelOperation.Write, TMEX.TMOneWireLevelMode.Normal, TMEX.TMOneWireLevelPrime.Immediate);				
+            // Sleep while the data is transfered
+            System.Threading.Thread.Sleep(6);
 
-				// Re-throw the exception
-				throw;
-			}
+            // Stop the strong pullup
+            owAdapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.Normal, TMEX.LevelPrime.Immediate);
 
-			// Sleep while the data is transfered
-			System.Threading.Thread.Sleep(6);
+            // Read data to see if the conversion is over
+            owAdapter.ReadByte();
 
-			// Stop the strong pullup
-			nResult = owAdapter.SetLevel(TMEX.TMOneWireLevelOperation.Write, TMEX.TMOneWireLevelMode.Normal, TMEX.TMOneWireLevelPrime.Immediate);
+            // Select and access the ID of the device we want to talk to
+            owAdapter.Select(DeviceId);
 
-			// Read data to see if the conversion is over
-			nCheckByte = owAdapter.ReadByte();
+            // Reinitialize the data count
+            dataCount = 0;
 
-			// Select and access the ID of the device we want to talk to
-			owAdapter.Select(_deviceID);
+            // Set the read command into the transmit buffer
+            data[dataCount++] = 0xAA;
 
-			// Reinitialize the data count
-			nDataCount = 0;
+            // Set the address to get the conversion results
+            data[dataCount++] = 0x00;
+            data[dataCount++] = 0x00;
 
-			// Set the read command into the transmit buffer
-			aData[nDataCount++] = 0xAA;
+            // Add 10 bytes to be read - 8 for the data and 2 for the CRC
+            for (var index = 0; index < 10; index++)
+                data[dataCount++] = 0xFF;
 
-			// Set the address to get the conversion results
-			aData[nDataCount++] = 0x00;
-			aData[nDataCount++] = 0x00;
+            // Send the block to the device
+            owAdapter.SendBlock(data, dataCount);
 
-			// Add 10 bytes to be read - 8 for the data and 2 for the CRC
-			for (iIndex = 0; iIndex < 10; iIndex++)
-				aData[nDataCount++] = 0xFF;
+            // Calculate the CRC of the transmitted data
+            calculatedCrc = owCRC16.Calculate(data, 0, 10);
 
-			// Send the block to the device
-			nResult = owAdapter.SendBlock(aData, nDataCount);
+            // Reconstruct the CRC sent by the device
+            sentCrc = data[dataCount - 1] << 8;
+            sentCrc |= data[dataCount - 2];
+            sentCrc ^= 0xFFFF;
 
-			// Calculate the CRC of the transmitted data
-			iCalculatedCRC = owCRC16.Calculate(aData, 0, 10);
+            // If the CRC doesn't match then throw an exception
+            if (calculatedCrc != sentCrc)
+            {
+                // Throw a CRC exception
+                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+            }
 
-			// Reconstruct the CRC sent by the device
-			iSentCRC = aData[nDataCount - 1] << 8;
-			iSentCRC |= aData[nDataCount - 2];
-			iSentCRC ^= 0xFFFF;
+            // Voltage values to return
+            var voltages = new double[4];
 
-			// If the CRC doesn't match then throw an exception
-			if (iCalculatedCRC != iSentCRC)
-			{
-				// Throw a CRC exception
-				throw new owException(owException.owExceptionFunction.CRC, _deviceID);
-			}
+            // Convert the data into a double
+            for (var index = 3; index < 11; index += 2)
+            {
+                // Reconstruct the two bytes into the 16-bit values
+                var iVoltageReadout = ((data[index + 1] << 8) | data[index]) & 0x0000FFFF;
 
-			// Convert the data into a double
-			for (iIndex = 3; iIndex < 11; iIndex += 2)
-			{
-				// Reconstruct the two bytes into the 16-bit values
-				iVoltageReadout = ((aData[iIndex + 1] << 8) | aData[iIndex]) & 0x0000FFFF;
+                // Figure out the percentage of the top voltage is present
+                voltages[(index - 3) / 2] = iVoltageReadout / 65535.0;
 
-				// Figure out the percentage of the top voltage is present
-				dVoltages[(iIndex - 3) / 2] = iVoltageReadout / 65535.0;
+                // Apply the percentage to the maximum voltage range
+                voltages[(index - 3) / 2] *= ((_control[(index - 3) + 1] & 0x01) == 0x01 ? 5.12 : 2.56);
+            }
 
-				// Apply the percentage to the maximum voltage range
-				dVoltages[(iIndex - 3) / 2] *= ((m_aControl[(iIndex - 3) + 1] & 0x01) == 0x01 ? 5.12 : 2.56);
-			}
-
-			return dVoltages;
-		}
-
-		#endregion
-	}
+            return voltages;
+        }
+    }
 }

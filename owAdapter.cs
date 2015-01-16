@@ -1,165 +1,150 @@
-using System;
-
 namespace OneWireAPI
 {
-	public class owAdapter 
-	{
-		#region Member variables
+    public class owAdapter
+    {
+        private static owSession _session;
+        private static owIdentifier _lastId;
 
-		private static owSession		m_oSession;			// The current session
-		private static owIdentifier		m_oLastID;			// Last ID selected
+        public static void Initialize(owSession session)
+        {
+            // Store the session we are dealing with
+            _session = session;
+        }
 
-		#endregion
+        public static void Select(owIdentifier id)
+        {
+            // Set the ID of the device we want to talk to
+            var result = TMEX.TMRom(_session.SessionHandle, _session.StateBuffer, id.RawId);
 
-		#region Methods
+            // Check the result
+            if (result != 1)
+            {
+                // Throw a ROM exception
+                throw new owException(owException.ExceptionFunction.Select, id, result);
+            }
 
-		public static void Initialize(owSession Session)
-		{
-			// Store the session we are dealing with
-			m_oSession = Session;
-		}
+            // Copy the ID as the last selected ID
+            _lastId = id;
 
-		public static void Select(owIdentifier ID)
-		{
-			// Set the ID of the device we want to talk to
-			short nResult = TMEX.TMRom(m_oSession.SessionHandle, m_oSession.StateBuffer, ID.RawID);
+            // Access the device
+            Access();
+        }
 
-			// Check the result
-			if (nResult != 1)
-			{
-				// Throw a ROM exception
-				throw new owException(owException.owExceptionFunction.Select, ID, nResult);
-			}
+        public static void Access()
+        {
+            // Attempt to access the device
+            var result = TMEX.TMAccess(_session.SessionHandle, _session.StateBuffer);
 
-			// Copy the ID as the last selected ID
-			m_oLastID = ID;
+            // Check to see if we could access the device
+            if (result != 1)
+            {
+                // Throw an access exception
+                throw new owException(owException.ExceptionFunction.Access, _lastId, result);
+            }
+        }
 
-			// Access the device
-			Access();
-		}
+        public static short SendBlock(byte[] data, short byteCount)
+        {
+            // Send the block and return the result
+            var result = TMEX.TMBlockStream(_session.SessionHandle, data, byteCount);
 
-		public static void Access()
-		{
-			// Attempt to access the device
-			short nResult = TMEX.TMAccess(m_oSession.SessionHandle, m_oSession.StateBuffer);
+            // Check to see if the bytes sent matches the value returned
+            if (result != byteCount)
+            {
+                // Throw an access exception
+                throw new owException(owException.ExceptionFunction.SendBlock, _lastId, result);
+            }
 
-			// Check to see if we could access the device
-			if (nResult != 1)
-			{
-				// Throw an access exception
-				throw new owException(owException.owExceptionFunction.Access, m_oLastID, nResult);
-			}
-		}
+            // Return the result
+            return result;
+        }
 
-		public static short SendBlock(byte[] Data, short ByteCount)
-		{
-			// Send the block and return the result
-			short nResult = TMEX.TMBlockStream(m_oSession.SessionHandle, Data, ByteCount);
+        public static short SendBlock(byte[] data, short byteCount, bool reset)
+        {
+            // Send the block and return the result
+            var result = reset ? TMEX.TMBlockStream(_session.SessionHandle, data, byteCount) : TMEX.TMBlockIO(_session.SessionHandle, data, byteCount);
 
-			// Check to see if the bytes sent matches the value returned
-			if (nResult != ByteCount) 
-			{
-				// Throw an access exception
-				throw new owException(owException.owExceptionFunction.SendBlock, m_oLastID, nResult);
-			}
+            // Check to see if the bytes sent matches the value returned
+            if (result != byteCount)
+            {
+                // Throw an access exception
+                throw new owException(owException.ExceptionFunction.SendBlock, _lastId, result);
+            }
 
-			// Return the result
-			return nResult;
-		}
+            // Return the result
+            return result;
+        }
 
-		public static short SendBlock(byte[] Data, short ByteCount, bool Reset)
-		{
-			short	nResult;
+        public static short ReadBit()
+        {
+            // Send the byte and get back what was sent
+            var result = TMEX.TMTouchBit(_session.SessionHandle, 0xFF);
 
-			// Send the block and return the result
-			if (Reset)
-				nResult = TMEX.TMBlockStream(m_oSession.SessionHandle, Data, ByteCount);
-			else
-				nResult = TMEX.TMBlockIO(m_oSession.SessionHandle, Data, ByteCount);
+            // Return the result
+            return result;
+        }
 
-			// Check to see if the bytes sent matches the value returned
-			if (nResult != ByteCount) 
-			{
-				// Throw an access exception
-				throw new owException(owException.owExceptionFunction.SendBlock, m_oLastID, nResult);
-			}
+        public static short SendBit(short output)
+        {
+            // Send the byte and get back what was sent
+            var result = TMEX.TMTouchBit(_session.SessionHandle, output);
 
-			// Return the result
-			return nResult;
-		}
+            // Check that the value was sent correctly
+            if (result != output)
+            {
+                // Throw an exception
+                throw new owException(owException.ExceptionFunction.SendBit, _lastId);
+            }
 
-		public static short ReadBit()
-		{
-			// Send the byte and get back what was sent
-			short nResult = TMEX.TMTouchBit(m_oSession.SessionHandle, 0xFF);
+            // Return the result
+            return result;
+        }
 
-			// Return the result
-			return nResult;
-		}
+        public static short ReadByte()
+        {
+            // Send the byte and get back what was sent
+            var result = TMEX.TMTouchByte(_session.SessionHandle, 0xFF);
 
-		public static short SendBit(short Output)
-		{
-			// Send the byte and get back what was sent
-			short nResult = TMEX.TMTouchBit(m_oSession.SessionHandle, Output);
+            // Return the result
+            return result;
+        }
 
-			// Check that the value was sent correctly
-			if (nResult != Output)
-			{
-				// Throw an exception
-				throw new owException(owException.owExceptionFunction.SendBit, m_oLastID);
-			}
+        public static short Reset()
+        {
+            // Reset all devices
+            return TMEX.TMTouchReset(_session.SessionHandle);
+        }
 
-			// Return the result
-			return nResult;
-		}
+        public static short SendByte(short output)
+        {
+            // Send the byte and get back what was sent
+            var result = TMEX.TMTouchByte(_session.SessionHandle, output);
 
-		public static short ReadByte()
-		{
-			// Send the byte and get back what was sent
-			short nResult = TMEX.TMTouchByte(m_oSession.SessionHandle, 0xFF);
+            // Check that the value was sent correctly
+            if (result != output)
+            {
+                // Throw an exception
+                throw new owException(owException.ExceptionFunction.SendByte, _lastId);
+            }
 
-			// Return the result
-			return nResult;
-		}
+            // Return the result
+            return result;
+        }
 
-		public static short Reset()
-		{
-			// Reset all devices
-			return TMEX.TMTouchReset(m_oSession.SessionHandle);
-		}
+        public static short SetLevel(TMEX.LevelOperation nOperation, TMEX.LevelMode nLevelMode, TMEX.LevelPrime nPrimed)
+        {
+            // Set the level
+            var result = TMEX.TMOneWireLevel(_session.SessionHandle, TMEX.LevelOperation.Write, TMEX.LevelMode.Normal, TMEX.LevelPrime.Immediate);
 
-		public static short SendByte(short Output)
-		{
-			// Send the byte and get back what was sent
-			short nResult = TMEX.TMTouchByte(m_oSession.SessionHandle, Output);
+            // Check the result
+            if (result < 0)
+            {
+                // Throw an exception
+                throw new owException(owException.ExceptionFunction.SetLevel, result);
+            }
 
-			// Check that the value was sent correctly
-			if (nResult != Output)
-			{
-				// Throw an exception
-				throw new owException(owException.owExceptionFunction.SendByte, m_oLastID);
-			}
-
-			// Return the result
-			return nResult;
-		}	
-
-		public static short SetLevel(TMEX.TMOneWireLevelOperation nOperation, TMEX.TMOneWireLevelMode nLevelMode, TMEX.TMOneWireLevelPrime nPrimed)
-		{
-			// Set the level
-			short nResult = TMEX.TMOneWireLevel(m_oSession.SessionHandle, TMEX.TMOneWireLevelOperation.Write, TMEX.TMOneWireLevelMode.Normal, TMEX.TMOneWireLevelPrime.Immediate);
-
-			// Check the result
-			if (nResult < 0)
-			{
-				// Throw an exception
-				throw new owException(owException.owExceptionFunction.SetLevel, nResult);
-			}
-
-			// Return the result
-			return nResult;
-		}
-
-		#endregion
-	}
+            // Return the result
+            return result;
+        }
+    }
 }

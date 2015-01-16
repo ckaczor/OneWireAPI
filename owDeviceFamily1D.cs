@@ -1,76 +1,67 @@
-using System;
-
 namespace OneWireAPI
 {
-	public class owDeviceFamily1D : owDevice
-	{
-		#region Constructor
+    public class owDeviceFamily1D : owDevice
+    {
+        public owDeviceFamily1D(owSession session, short[] id)
+            : base(session, id)
+        {
+            // Just call the base constructor
+        }
 
-		public owDeviceFamily1D(owSession Session, short[] ID) : base(Session, ID)
-		{
-			// Just call the base constructor
-		}
+        public uint GetCounter(int counterPage)
+        {
+            // Select and access the ID of the device we want to talk to
+            owAdapter.Select(DeviceId);
 
-		#endregion
+            // Data buffer to send over the network
+            var data = new byte[30];
 
-		#region Methods
+            // How many bytes of data to send
+            short dataCount = 0;
 
-		public uint GetCounter(int CounterPage)
-		{
-			short		nResult;								// Result of method calls
-			byte[]		aData				= new byte[30];		// Data buffer to send over the network
-			short		nDataCount			= 0;				// How many bytes of data to send
-			int			iLastByte;								// Address of the last byte in the requested page
-			uint		iCounter			= 0;				// Counter value
-			int			iCRCResult;								// Result of the CRC calculation
-			int			iMatchCRC;								// CRC retrieved from the device
+            // Set the "read memory and counter" command into the data array
+            data[dataCount++] = 0xA5;
 
-			// Select and access the ID of the device we want to talk to
-			owAdapter.Select(_deviceID);
+            // Calculate the position of the last byte in the page
+            var lastByte = (counterPage << 5) + 31;
 
-			// Set the "read memory and counter" command into the data array
-			aData[nDataCount++] = 0xA5;
+            // Copy the lower byte of the last byte into the data array
+            data[dataCount++] = (byte) (lastByte & 0xFF);
 
-			// Calculate the position of the last byte in the page
-			iLastByte = (CounterPage << 5) + 31;
+            // Copy the upper byte of the last byte into the data array
+            data[dataCount++] = (byte) (lastByte >> 8);
 
-			// Copy the lower byte of the last byte into the data array
-			aData[nDataCount++] = (byte) (iLastByte & 0xFF);
+            // Add byte for the data byate, counter, zero bits, and CRC16 result
+            for (var i = 0; i < 11; i++) data[dataCount++] = 0xFF;
 
-			// Copy the upper byte of the last byte into the data array
-			aData[nDataCount++] = (byte) (iLastByte >> 8);
+            // Send the block of data to the device
+            owAdapter.SendBlock(data, dataCount);
 
-			// Add byte for the data byate, counter, zero bits, and CRC16 result
-			for (int i = 0; i < 11; i++)	aData[nDataCount++] = 0xFF;
+            // Calculate the CRC based on the data
+            var crcResult = owCRC16.Calculate(data, 0, 11);
 
-			// Send the block of data to the device
-			nResult = owAdapter.SendBlock(aData, nDataCount);
+            // Assemble the CRC provided by the device
+            var matchCrc = data[13] << 8;
+            matchCrc |= data[12];
+            matchCrc ^= 0xFFFF;
 
-			// Calculate the CRC based on the data
-			iCRCResult = owCRC16.Calculate(aData, 0, 11);
+            // Make sure the CRC values match
+            if (crcResult != matchCrc)
+            {
+                // Throw a CRC exception
+                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+            }
 
-			// Assemble the CRC provided by the device
-			iMatchCRC = aData[13] << 8;
-			iMatchCRC |= aData[12];
-			iMatchCRC ^= 0xFFFF;
+            uint counter = 0;
 
-			// Make sure the CRC values match
-			if (iCRCResult != iMatchCRC)
-			{
-				// Throw a CRC exception
-				throw new owException(owException.owExceptionFunction.CRC, _deviceID);
-			}
+            // Assemble the counter data from the bytes retrieved
+            for (var i = dataCount - 7; i >= dataCount - 10; i--)
+            {
+                counter <<= 8;
+                counter |= data[i];
+            }
 
-			// Assemble the counter data from the bytes retrieved
-			for (int i = nDataCount - 7; i >= nDataCount - 10; i--)
-			{
-				iCounter <<= 8;
-				iCounter |= aData[i];
-			}
-
-			return iCounter;
-		}
-
-		#endregion
-	}
+            return counter;
+        }
+    }
 }

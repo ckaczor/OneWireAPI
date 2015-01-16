@@ -1,80 +1,65 @@
-using System;
 using System.Text;
 
 namespace OneWireAPI
 {
-    public class owIdentifier 
+    public class owIdentifier
     {
-        #region Member variables
-
-        private readonly short[] _rawID;                // The raw ID array
+        private readonly short[] _rawId;                // The raw ID array
         private readonly string _friendlyName;          // Friendly display name
         private readonly int _familyCode;               // Family code
-
-        #endregion
-
-        #region Constructors
 
         public owIdentifier()
         {
             // Create a blank ID
-            _rawID = new short[8];
+            _rawId = new short[8];
         }
 
-        public owIdentifier(byte[] deviceID)
+        public owIdentifier(byte[] deviceId)
         {
             // Create a blank ID
-            _rawID = new short[8];
+            _rawId = new short[8];
 
             // Copy the byte array to the short array
-            for (int i = 0; i < deviceID.Length; i++) 
-                _rawID[i] = deviceID[i];
+            for (var i = 0; i < deviceId.Length; i++)
+                _rawId[i] = deviceId[i];
 
             // Get the friendly name
-            _friendlyName = ConvertToString(_rawID);
+            _friendlyName = ConvertToString(_rawId);
 
             // Get the family code
-            _familyCode = _rawID[0];
+            _familyCode = _rawId[0];
         }
 
-        public owIdentifier(short[] deviceID)
+        public owIdentifier(short[] deviceId)
         {
             // Store the ID supplied
-            _rawID = deviceID;
+            _rawId = deviceId;
 
             // Get the friendly name
-            _friendlyName = ConvertToString(_rawID);
+            _friendlyName = ConvertToString(_rawId);
 
             // Get the family code
-            _familyCode = _rawID[0];
+            _familyCode = _rawId[0];
         }
 
-        #endregion
-
-        #region Private methods
-
-        private static string ConvertToString(short[] rawID)
+        private static string ConvertToString(short[] rawId)
         {
-            StringBuilder friendlyID = new StringBuilder();
+            var friendlyId = new StringBuilder();
 
             // Loop backwards over the ID array
-            for (int iIndex = rawID.Length - 1; iIndex >= 0; iIndex--)
+            for (var iIndex = rawId.Length - 1; iIndex >= 0; iIndex--)
             {
                 // Convert the short value into a hex string and append it to the ID string
-                friendlyID.AppendFormat("{0:X2}", rawID[iIndex]);
+                friendlyId.AppendFormat("{0:X2}", rawId[iIndex]);
             }
 
             // Return the ID string
-            return friendlyID.ToString();
+            return friendlyId.ToString();
         }
 
-        #endregion
-
-        #region Properties
-
-        public short[] RawID
+        public short[] RawId
         {
-            get { return _rawID; }
+            get { return _rawId; }
         }
 
         public string Name
@@ -87,15 +72,9 @@ namespace OneWireAPI
             get { return _familyCode; }
         }
 
-        #endregion
-
-        #region Methods
-
         public override string ToString()
         {
             return _friendlyName;
         }
-
-        #endregion
     }
 }

@@ -1,172 +1,172 @@
-using System;
-
 namespace OneWireAPI
 {
-	public class owDeviceFamilyFF : owDevice
-	{
-		#region Member variables
+    public class owDeviceFamilyFF : owDevice
+    {
+        private int _width = 20;
+        private int _height = 4;
 
-		private int	m_iWidth		=	20;
-		private int	m_iHeight		=	4;
+        public owDeviceFamilyFF(owSession session, short[] id)
+            : base(session, id)
+        {
+            // Just call the base constructor
+        }
 
-		#endregion
+        public void SetSize(int width, int height)
+        {
+            _width = width;
+            _height = height;
+        }
 
-		#region Constructor
+        public void SetBackLight(bool state)
+        {
+            // Select the device
+            owAdapter.Select(DeviceId);
 
-		public owDeviceFamilyFF(owSession Session, short[] ID) : base(Session, ID)
-		{
-			// Just call the base constructor
-		}
+            // Set the state of the backlight
+            owAdapter.SendByte((short) (state ? 0x8 : 0x7));
+        }
 
-		#endregion
-
-		#region Methods
-
-		public void SetBackLight(bool State)
-		{
-			// Select the device
-			owAdapter.Select(_deviceID);
-
-			// Set the state of the backlight
-			owAdapter.SendByte((short) (State ? 0x8 : 0x7));
-		}
-
-		public void SetText(string Text)
-		{
-			string[]	sLines		= null;		// Array of lines
-			int			iLine		= 1;		// Line number
+        public void SetText(string text)
+        {
+            // Line number
+            var line = 1;
 
             // Replace any CRLF pairs with just a newline
-            Text = Text.Replace("\r\n", "\n");
-			
-			// Split the input string at any newlines
-			sLines = Text.Split("\n".ToCharArray(), m_iHeight);
+            text = text.Replace("\r\n", "\n");
 
-			// Loop over each line
-			foreach (string sLine in sLines)
-			{
-				// Set the text of this line
-				SetText(sLine, iLine++);
-			}
-		}
+            // Split the input string at any newlines
+            var sLines = text.Split("\n".ToCharArray(), _height);
 
-		public void SetText(string Text, int Line)
-		{
-			short	nMemoryPosition		= 0x00;			// Position at which to write the new string data
-			string	sSendData			= "";			// String data to send
-			byte[]	baData;								// Byte array of data to send
-			short	nDataCount			= 0;			// Amount of data to send
+            // Loop over each line
+            foreach (var sLine in sLines)
+            {
+                // Set the text of this line
+                SetText(sLine, line++);
+            }
+        }
 
-			// Figure out the initial memory position based on the line number
-			switch (Line)
-			{
-				case 1:
-					nMemoryPosition = 0x00;
-					break;
+        public void SetText(string text, int line)
+        {
+            // Position at which to write the new string data
+            short memoryPosition = 0x00;
 
-				case 2:
-					nMemoryPosition = 0x40;
-					break;
+            // String data to send
+            string sendData;
 
-				case 3:
-					nMemoryPosition = 0x14;
-					break;
+            // Byte array of data to send
+            byte[] data;
 
-				case 4:
-					nMemoryPosition = 0x54;
-					break;
-			}
+            // Amount of data to send
+            short dataCount = 0;
 
-			// Pad the text to the right width
-			Text = Text.PadRight(m_iWidth);
+            // Figure out the initial memory position based on the line number
+            switch (line)
+            {
+                case 1:
+                    memoryPosition = 0x00;
+                    break;
 
-			// The scratchpad is only 16 bytes long so we need to split it up
-			if (m_iWidth > 16)
-			{
-				// Select the device
-				owAdapter.Select(_deviceID);
+                case 2:
+                    memoryPosition = 0x40;
+                    break;
 
-				// Set the data block to just the first 16 characters
-				sSendData = Text.Substring(0, 16);
+                case 3:
+                    memoryPosition = 0x14;
+                    break;
 
-				// Initialize the data array
-				baData = new byte[18];
+                case 4:
+                    memoryPosition = 0x54;
+                    break;
+            }
 
-				// Set the command to write to the scratchpad 
-				baData[nDataCount++] = 0x4E;
+            // Pad the text to the right width
+            text = text.PadRight(_width);
 
-				// Set the memory position
-				baData[nDataCount++] = (byte) nMemoryPosition;
+            // The scratchpad is only 16 bytes long so we need to split it up
+            if (_width > 16)
+            {
+                // Select the device
+                owAdapter.Select(DeviceId);
 
-				// Add the text data to the data
-				foreach (byte bChar in System.Text.Encoding.Default.GetBytes(sSendData))
-					baData[nDataCount++] = bChar;
+                // Set the data block to just the first 16 characters
+                sendData = text.Substring(0, 16);
 
-				// Set the block
-				owAdapter.SendBlock(baData, nDataCount);
+                // Initialize the data array
+                data = new byte[18];
 
-				// Select the device
-				owAdapter.Select(_deviceID);
+                // Set the command to write to the scratchpad 
+                data[dataCount++] = 0x4E;
 
-				// Send the scratchpad data to the LCD
-				owAdapter.SendByte(0x48);
+                // Set the memory position
+                data[dataCount++] = (byte) memoryPosition;
 
-				// Reset the device
-				owAdapter.Reset();
+                // Add the text data to the data
+                foreach (var bChar in System.Text.Encoding.Default.GetBytes(sendData))
+                    data[dataCount++] = bChar;
 
-				// Increment the memory position
-				nMemoryPosition += 16;
+                // Set the block
+                owAdapter.SendBlock(data, dataCount);
 
-				// Set the data to the rest of the line
-				sSendData = Text.Substring(16, m_iWidth - 16);
-			}
-			else
-			{
-				// Just set the data string to whatever was passed in
-				sSendData = Text;
-			}
+                // Select the device
+                owAdapter.Select(DeviceId);
 
-			// Select the device
-			owAdapter.Select(_deviceID);
+                // Send the scratchpad data to the LCD
+                owAdapter.SendByte(0x48);
 
-			// Initialize the data array
-			baData = new byte[18];
+                // Reset the device
+                owAdapter.Reset();
 
-			// Reset the data count
-			nDataCount = 0;
+                // Increment the memory position
+                memoryPosition += 16;
 
-			// Set the command to write to the scratchpad 
-			baData[nDataCount++] = 0x4E;
+                // Set the data to the rest of the line
+                sendData = text.Substring(16, _width - 16);
+            }
+            else
+            {
+                // Just set the data string to whatever was passed in
+                sendData = text;
+            }
 
-			// Set the memory position
-			baData[nDataCount++] = (byte) nMemoryPosition;
+            // Select the device
+            owAdapter.Select(DeviceId);
 
-			// Add the text data to the data
-			foreach (byte bChar in System.Text.Encoding.Default.GetBytes(sSendData))
-				baData[nDataCount++] = bChar;
+            // Initialize the data array
+            data = new byte[18];
 
-			// Set the block
-			owAdapter.SendBlock(baData, nDataCount);
+            // Reset the data count
+            dataCount = 0;
 
-			// Select the device
-			owAdapter.Select(_deviceID);
+            // Set the command to write to the scratchpad 
+            data[dataCount++] = 0x4E;
 
-			// Send the scratchpad data to the LCD
-			owAdapter.SendByte(0x48);
+            // Set the memory position
+            data[dataCount++] = (byte) memoryPosition;
 
-			// Reset the device
-			owAdapter.Reset();
-		}
+            // Add the text data to the data
+            foreach (var bChar in System.Text.Encoding.Default.GetBytes(sendData))
+                data[dataCount++] = bChar;
 
-		public void Clear()
-		{
-			// Select the device
-			owAdapter.Select(_deviceID);
+            // Set the block
+            owAdapter.SendBlock(data, dataCount);
 
-			// Clear the display
-			owAdapter.SendByte(0x49);
-		}
+            // Select the device
+            owAdapter.Select(DeviceId);
 
-		#endregion
-	}
+            // Send the scratchpad data to the LCD
+            owAdapter.SendByte(0x48);
+
+            // Reset the device
+            owAdapter.Reset();
+        }
+
+        public void Clear()
+        {
+            // Select the device
+            owAdapter.Select(DeviceId);
+
+            // Clear the display
+            owAdapter.SendByte(0x49);
+        }
+    }
 }

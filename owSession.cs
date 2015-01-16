@@ -1,13 +1,10 @@
 using Common.Debug;
 using System;
-using System.Threading;
 
 namespace OneWireAPI
 {
     public class owSession 
     {
-        #region Member variables
-
         private int _sessionHandle;                 // Session handle
         private owNetwork _network;                 // Network object
         
@@ -15,34 +12,26 @@ namespace OneWireAPI
         private readonly short _portType;           // Port type
         private readonly byte[] _stateBuffer;       // Global state buffer
 
-        #endregion
-
-        #region Constructor
-
         public owSession()
         {
             // Create the global state buffer
-            _stateBuffer = new byte[(int) TMEX.TMStateBufferSize.NoEPROMWriting];
+            _stateBuffer = new byte[(int) TMEX.StateBufferSize.NoEpromWriting];
 
             // Get the default port number and type from the system
-            short result = TMEX.TMReadDefaultPort(out _portNumber, out _portType);
+            var result = TMEX.TMReadDefaultPort(out _portNumber, out _portType);
 
             Tracer.WriteLine("TMReadDefaultPort - Return: {0}, Port Number: {1}, Port Type: {2}", result, _portNumber, _portType);
         }
 
-        public owSession(short PortNumber, short PortType)
+        public owSession(short portNumber, short portType)
         {
             // Create the global state buffer
-            _stateBuffer = new byte[(int) TMEX.TMStateBufferSize.NoEPROMWriting];
+            _stateBuffer = new byte[(int) TMEX.StateBufferSize.NoEpromWriting];
 
             // Store the port number and type specified
-            _portNumber = PortNumber;
-            _portType = PortType;
+            _portNumber = portNumber;
+            _portType = portType;
         }
-
-        #endregion
-
-        #region Properties
 
         public short PortNumber
         {
@@ -69,23 +58,19 @@ namespace OneWireAPI
             get { return _stateBuffer; }
         }
 
-        #endregion
-
-        #region Methods
-
         public bool Acquire()
         {
             // Create a byte array to hold the version information
-            byte[] version = new byte[80];
+            var version = new byte[80];
 
             // Get the version 
             TMEX.Get_Version(version);
 
             // Decode the version
-            string sVersion = System.Text.Encoding.Default.GetString(version, 0, version.Length);
+            var sVersion = System.Text.Encoding.Default.GetString(version, 0, version.Length);
 
             // Strip everything up to the first null character
-            sVersion = sVersion.Substring(0, sVersion.IndexOf("\0"));
+            sVersion = sVersion.Substring(0, sVersion.IndexOf("\0", StringComparison.Ordinal));
 
             Tracer.WriteLine("Version: {0}", sVersion);
 
@@ -101,7 +86,7 @@ namespace OneWireAPI
                 return false;
 
             // Setup the port for the current session
-            short result = TMEX.TMSetup(_sessionHandle);
+            var result = TMEX.TMSetup(_sessionHandle);
 
             Tracer.WriteLine("TMSetup - Return: {0}", result);
 
@@ -138,7 +123,7 @@ namespace OneWireAPI
             }
 
             // Close the session
-            short result = TMEX.TMClose(_sessionHandle);
+            var result = TMEX.TMClose(_sessionHandle);
 
             Tracer.WriteLine("TMClose - Return: {0}", result);
 
@@ -150,7 +135,5 @@ namespace OneWireAPI
             // Clear the session variable
             _sessionHandle = 0;
         }
-
-        #endregion
     }
 }
