@@ -1,6 +1,6 @@
 namespace OneWireAPI
 {
-    public class owDeviceFamily20 : owDevice
+    public class DeviceFamily20 : Device
     {
         private readonly byte[] _control = new byte[16];
 
@@ -16,7 +16,7 @@ namespace OneWireAPI
             SixteenBits = 0x00
         }
 
-        public owDeviceFamily20(owSession session, short[] id)
+        public DeviceFamily20(Session session, short[] id)
             : base(session, id)
         {
         }
@@ -53,7 +53,7 @@ namespace OneWireAPI
             data[dataCount++] = (startAddress >> 8) & 0xFF;
 
             // Select and access the ID of the device we want to talk to
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Write to the data pages specified
             for (var index = startAddress; index <= endAddress; index++)
@@ -69,13 +69,13 @@ namespace OneWireAPI
                 data[dataCount++] = 0xFF;
 
                 // Send the block
-                owAdapter.SendBlock(data, dataCount);
+                Adapter.SendBlock(data, dataCount);
 
                 // If the check byte doesn't match then throw an exception
                 if (data[dataCount - 1] != _control[index - startAddress])
                 {
                     // Throw an exception
-                    throw new owException(owException.ExceptionFunction.SendBlock, DeviceId);
+                    throw new OneWireException(OneWireException.ExceptionFunction.SendBlock, DeviceId);
                 }
 
                 int calculatedCrc;							// CRC we calculated from sent data
@@ -85,7 +85,7 @@ namespace OneWireAPI
                 if (index == startAddress)
                 {
                     // Calculate the CRC16 of the data sent
-                    calculatedCrc = owCRC16.Calculate(data, 0, 3);
+                    calculatedCrc = Crc16.Calculate(data, 0, 3);
 
                     // Reconstruct the CRC sent by the device
                     sentCrc = data[dataCount - 2] << 8;
@@ -95,7 +95,7 @@ namespace OneWireAPI
                 else
                 {
                     // Calculate the CRC16 of the data sent
-                    calculatedCrc = owCRC16.Calculate(_control[index - startAddress], index);
+                    calculatedCrc = Crc16.Calculate(_control[index - startAddress], index);
 
                     // Reconstruct the CRC sent by the device
                     sentCrc = data[dataCount - 2] << 8;
@@ -107,7 +107,7 @@ namespace OneWireAPI
                 if (calculatedCrc != sentCrc)
                 {
                     // Throw a CRC exception
-                    throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+                    throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
                 }
 
                 // Reset the byte count
@@ -118,7 +118,7 @@ namespace OneWireAPI
         public double[] GetVoltages()
         {
             // Select and access the ID of the device we want to talk to
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Data buffer to send over the network
             var data = new byte[30];
@@ -140,10 +140,10 @@ namespace OneWireAPI
             data[dataCount++] = 0xFF;
 
             // Send the data block
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Calculate the CRC based on the transmit buffer
-            var calculatedCrc = owCRC16.Calculate(data, 0, 2);
+            var calculatedCrc = Crc16.Calculate(data, 0, 2);
 
             // Reconstruct the CRC sent by the device
             var sentCrc = data[4] << 8;
@@ -154,23 +154,23 @@ namespace OneWireAPI
             if (calculatedCrc != sentCrc)
             {
                 // Throw a CRC exception
-                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
             }
 
             // Setup for for power delivery after the next byte
-            owAdapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.StrongPullup, TMEX.LevelPrime.AfterNextByte);
+            Adapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.StrongPullup, TMEX.LevelPrime.AfterNextByte);
 
             var nTransmitByte = (short) ((dataCount - 1) & 0x1F);
 
             try
             {
                 // Send the byte and start strong pullup
-                owAdapter.SendByte(nTransmitByte);
+                Adapter.SendByte(nTransmitByte);
             }
             catch
             {
                 // Stop the strong pullup			
-                owAdapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.Normal, TMEX.LevelPrime.Immediate);
+                Adapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.Normal, TMEX.LevelPrime.Immediate);
 
                 // Re-throw the exception
                 throw;
@@ -180,13 +180,13 @@ namespace OneWireAPI
             System.Threading.Thread.Sleep(6);
 
             // Stop the strong pullup
-            owAdapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.Normal, TMEX.LevelPrime.Immediate);
+            Adapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.Normal, TMEX.LevelPrime.Immediate);
 
             // Read data to see if the conversion is over
-            owAdapter.ReadByte();
+            Adapter.ReadByte();
 
             // Select and access the ID of the device we want to talk to
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Reinitialize the data count
             dataCount = 0;
@@ -203,10 +203,10 @@ namespace OneWireAPI
                 data[dataCount++] = 0xFF;
 
             // Send the block to the device
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Calculate the CRC of the transmitted data
-            calculatedCrc = owCRC16.Calculate(data, 0, 10);
+            calculatedCrc = Crc16.Calculate(data, 0, 10);
 
             // Reconstruct the CRC sent by the device
             sentCrc = data[dataCount - 1] << 8;
@@ -217,7 +217,7 @@ namespace OneWireAPI
             if (calculatedCrc != sentCrc)
             {
                 // Throw a CRC exception
-                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
             }
 
             // Voltage values to return

@@ -1,8 +1,8 @@
 namespace OneWireAPI
 {
-    public class owDeviceFamily1D : owDevice
+    public class DeviceFamily1D : Device
     {
-        public owDeviceFamily1D(owSession session, short[] id)
+        public DeviceFamily1D(Session session, short[] id)
             : base(session, id)
         {
             // Just call the base constructor
@@ -11,7 +11,7 @@ namespace OneWireAPI
         public uint GetCounter(int counterPage)
         {
             // Select and access the ID of the device we want to talk to
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Data buffer to send over the network
             var data = new byte[30];
@@ -35,10 +35,10 @@ namespace OneWireAPI
             for (var i = 0; i < 11; i++) data[dataCount++] = 0xFF;
 
             // Send the block of data to the device
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Calculate the CRC based on the data
-            var crcResult = owCRC16.Calculate(data, 0, 11);
+            var crcResult = Crc16.Calculate(data, 0, 11);
 
             // Assemble the CRC provided by the device
             var matchCrc = data[13] << 8;
@@ -49,7 +49,7 @@ namespace OneWireAPI
             if (crcResult != matchCrc)
             {
                 // Throw a CRC exception
-                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
             }
 
             uint counter = 0;

@@ -1,10 +1,10 @@
 namespace OneWireAPI
 {
-    internal class owCRC8
+    internal class Crc8
     {
         private static byte[] _dataTable;		// Lookup table of CRC8 values
 
-        static owCRC8()
+        static Crc8()
         {
             // Initialize the CRC lookup table
             InitializeCrcTable();

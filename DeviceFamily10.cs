@@ -1,8 +1,8 @@
 namespace OneWireAPI
 {
-    public class owDeviceFamily10 : owDevice
+    public class DeviceFamily10 : Device
     {
-        public owDeviceFamily10(owSession session, short[] id)
+        public DeviceFamily10(Session session, short[] id)
             : base(session, id)
         {
             // Just call the base constructor
@@ -11,20 +11,20 @@ namespace OneWireAPI
         public double GetTemperature()
         {
             // Select and access the ID of the device we want to talk to
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Setup for for power delivery after the next byte
-            owAdapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.StrongPullup, TMEX.LevelPrime.AfterNextByte);
+            Adapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.StrongPullup, TMEX.LevelPrime.AfterNextByte);
 
             try
             {
                 // Send the byte and start strong pullup
-                owAdapter.SendByte(0x44);
+                Adapter.SendByte(0x44);
             }
             catch
             {
                 // Stop the strong pullup			
-                owAdapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.Normal, TMEX.LevelPrime.Immediate);
+                Adapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.Normal, TMEX.LevelPrime.Immediate);
 
                 // Re-throw the exception
                 throw;
@@ -34,10 +34,10 @@ namespace OneWireAPI
             System.Threading.Thread.Sleep(1000);
 
             // Stop the strong pullup
-            owAdapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.Normal, TMEX.LevelPrime.Immediate);
+            Adapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.Normal, TMEX.LevelPrime.Immediate);
 
             // Access the device we want to talk to
-            owAdapter.Access();
+            Adapter.Access();
 
             // Data buffer to send over the network
             var data = new byte[30];
@@ -53,16 +53,16 @@ namespace OneWireAPI
                 data[dataCount++] = 0xFF;
 
             // Send the data block and get data back
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Calculate the CRC of the first eight bytes of data
-            var crc = owCRC8.Calculate(data, 1, 8);
+            var crc = Crc8.Calculate(data, 1, 8);
 
             // Check to see if our CRC matches the CRC supplied
             if (crc != data[9])
             {
                 // Throw a CRC exception
-                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
             }
 
             // Get the LSB of the temperature data and divide it by two

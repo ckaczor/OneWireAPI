@@ -1,8 +1,8 @@
 namespace OneWireAPI
 {
-    public class owDeviceFamily26 : owDevice
+    public class DeviceFamily26 : Device
     {
-        public owDeviceFamily26(owSession session, short[] id)
+        public DeviceFamily26(Session session, short[] id)
             : base(session, id)
         {
             // Just call the base constructor
@@ -19,7 +19,7 @@ namespace OneWireAPI
             short busy;
 
             // Select and access the ID of the device we want to talk to
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Data buffer to send over the network
             var data = new byte[30];
@@ -34,13 +34,13 @@ namespace OneWireAPI
             data[dataCount++] = 0x00;
 
             // Send the data block
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Clear the data count
             dataCount = 0;
 
             // Access the device we want to talk to
-            owAdapter.Access();
+            Adapter.Access();
 
             // Set the command to read the scratchpad
             data[dataCount++] = 0xBE;
@@ -53,23 +53,23 @@ namespace OneWireAPI
                 data[dataCount++] = 0xFF;
 
             // Send the data block
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Calculate the CRC of the scratchpad data
-            var crc = owCRC8.Calculate(data, 2, 9);
+            var crc = Crc8.Calculate(data, 2, 9);
 
             // If the CRC doesn't match then throw an exception
             if (crc != data[10])
             {
                 // Throw a CRC exception
-                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
             }
 
             // TODO - Check if we really need to change the input selector
             if (true)
             {
                 // Access the device we want to talk to
-                owAdapter.Access();
+                Adapter.Access();
 
                 // Reset the data count
                 dataCount = 0;
@@ -91,13 +91,13 @@ namespace OneWireAPI
                     data[dataCount++] = data[index + 4];
 
                 // Send the data block
-                owAdapter.SendBlock(data, dataCount);
+                Adapter.SendBlock(data, dataCount);
 
                 // Reset the data count
                 dataCount = 0;
 
                 // Access the device we want to talk to
-                owAdapter.Access();
+                Adapter.Access();
 
                 // Set the command to copy the scratchpad
                 data[dataCount++] = 0x48;
@@ -106,26 +106,26 @@ namespace OneWireAPI
                 data[dataCount++] = 0x00;
 
                 // Send the data block
-                owAdapter.SendBlock(data, dataCount);
+                Adapter.SendBlock(data, dataCount);
 
                 // Loop until the data copy is complete
                 do
                 {
-                    busy = owAdapter.ReadByte();
+                    busy = Adapter.ReadByte();
                 }
                 while (busy == 0);
             }
 
             // Access the device we want to talk to
-            owAdapter.Access();
+            Adapter.Access();
 
             // Send the voltage conversion command
-            owAdapter.SendByte(0xB4);
+            Adapter.SendByte(0xB4);
 
             // Loop until conversion is complete
             do
             {
-                busy = owAdapter.ReadByte();
+                busy = Adapter.ReadByte();
             }
             while (busy == 0);
 
@@ -139,16 +139,16 @@ namespace OneWireAPI
             data[dataCount++] = 0x00;
 
             // Access the device we want to talk to
-            owAdapter.Access();
+            Adapter.Access();
 
             // Send the data block
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Clear the data count
             dataCount = 0;
 
             // Access the device we want to talk to
-            owAdapter.Access();
+            Adapter.Access();
 
             // Set the command to read the scratchpad
             data[dataCount++] = 0xBE;
@@ -161,16 +161,16 @@ namespace OneWireAPI
                 data[dataCount++] = 0xFF;
 
             // Send the data block
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Calculate the CRC of the scratchpad data
-            crc = owCRC8.Calculate(data, 2, 9);
+            crc = Crc8.Calculate(data, 2, 9);
 
             // If the CRC doesn't match then throw an exception
             if (crc != data[10])
             {
                 // Throw a CRC exception
-                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
             }
 
             // Assemble the voltage data
@@ -193,16 +193,16 @@ namespace OneWireAPI
         public double GetTemperature()
         {
             // Select and access the ID of the device we want to talk to
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Send the conversion command byte 
-            owAdapter.SendByte(0x44);
+            Adapter.SendByte(0x44);
 
             // Sleep while the data is converted
             System.Threading.Thread.Sleep(10);
 
             // Access the device we want to talk to
-            owAdapter.Access();
+            Adapter.Access();
 
             // Data buffer to send over the network
             var data = new byte[30];
@@ -217,13 +217,13 @@ namespace OneWireAPI
             data[dataCount++] = 0x00;
 
             // Send the data block
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Clear the data count
             dataCount = 0;
 
             // Access the device we want to talk to
-            owAdapter.Access();
+            Adapter.Access();
 
             // Set the command to read the scratchpad
             data[dataCount++] = 0xBE;
@@ -236,16 +236,16 @@ namespace OneWireAPI
                 data[dataCount++] = 0xFF;
 
             // Send the data block
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Calculate the CRC of the scratchpad data
-            var crc = owCRC8.Calculate(data, 2, 9);
+            var crc = Crc8.Calculate(data, 2, 9);
 
             // If the CRC doesn't match then throw an exception
             if (crc != data[10])
             {
                 // Throw a CRC exception
-                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
             }
 
             // Get the two bytes of temperature data

@@ -3,16 +3,16 @@ using System;
 
 namespace OneWireAPI
 {
-    public class owSession 
+    public class Session
     {
         private int _sessionHandle;                 // Session handle
-        private owNetwork _network;                 // Network object
-        
+        private Network _network;                 // Network object
+
         private readonly short _portNumber;         // Port number
         private readonly short _portType;           // Port type
         private readonly byte[] _stateBuffer;       // Global state buffer
 
-        public owSession()
+        public Session()
         {
             // Create the global state buffer
             _stateBuffer = new byte[(int) TMEX.StateBufferSize.NoEpromWriting];
@@ -23,7 +23,7 @@ namespace OneWireAPI
             Tracer.WriteLine("TMReadDefaultPort - Return: {0}, Port Number: {1}, Port Type: {2}", result, _portNumber, _portType);
         }
 
-        public owSession(short portNumber, short portType)
+        public Session(short portNumber, short portType)
         {
             // Create the global state buffer
             _stateBuffer = new byte[(int) TMEX.StateBufferSize.NoEpromWriting];
@@ -48,7 +48,7 @@ namespace OneWireAPI
             get { return _sessionHandle; }
         }
 
-        public owNetwork Network
+        public Network Network
         {
             get { return _network; }
         }
@@ -100,13 +100,13 @@ namespace OneWireAPI
             }
 
             // Create the network object and pass ourself as the session
-            _network = new owNetwork(this);
+            _network = new Network(this);
 
             // Initialize the network
             _network.Initialize();
 
             // Initialize the static adapter code with the session
-            owAdapter.Initialize(this);
+            Adapter.Initialize(this);
 
             return true;
         }

@@ -107,57 +107,51 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Data">
-      <Name>System.Data</Name>
-    </Reference>
-    <Reference Include="System.Xml">
-      <Name>System.XML</Name>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owAdapter.cs">
+    <Compile Include="Adapter.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owCRC16.cs">
+    <Compile Include="Crc16.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owCRC8.cs">
+    <Compile Include="Crc8.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owDevice.cs">
+    <Compile Include="Device.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owDeviceFamily10.cs">
+    <Compile Include="DeviceFamily10.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owDeviceFamily12.cs">
+    <Compile Include="DeviceFamily12.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owDeviceFamily1D.cs">
+    <Compile Include="DeviceFamily1D.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owDeviceFamily20.cs">
+    <Compile Include="DeviceFamily20.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owDeviceFamily26.cs">
+    <Compile Include="DeviceFamily26.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owDeviceFamilyFF.cs">
+    <Compile Include="DeviceFamilyFF.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owException.cs">
+    <Compile Include="OneWireException.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owIdentifer.cs">
+    <Compile Include="Identifer.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owNetwork.cs">
+    <Compile Include="Network.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="owSession.cs">
+    <Compile Include="Session.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="TMEX.cs">

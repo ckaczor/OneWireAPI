@@ -3,7 +3,7 @@ using System;
 namespace OneWireAPI
 {
     [Serializable]
-    public class owException : Exception
+    public class OneWireException : Exception
     {
         public enum ExceptionFunction
         {
@@ -20,9 +20,9 @@ namespace OneWireAPI
 
         private readonly int _errorNumber;
         private readonly ExceptionFunction _errorFunction;
-        private readonly owIdentifier _deviceId;
+        private readonly Identifier _deviceId;
 
-        public owException(ExceptionFunction function, int number)
+        public OneWireException(ExceptionFunction function, int number)
         {
             // Store the exception function
             _errorFunction = function;
@@ -31,7 +31,7 @@ namespace OneWireAPI
             _errorNumber = number;
         }
 
-        public owException(ExceptionFunction function, owIdentifier deviceId)
+        public OneWireException(ExceptionFunction function, Identifier deviceId)
         {
             // Store the exception function
             _errorFunction = function;
@@ -40,7 +40,7 @@ namespace OneWireAPI
             _deviceId = deviceId;
         }
 
-        public owException(ExceptionFunction function, owIdentifier deviceId, int number)
+        public OneWireException(ExceptionFunction function, Identifier deviceId, int number)
         {
             // Store the exception function
             _errorFunction = function;
@@ -52,7 +52,7 @@ namespace OneWireAPI
             _errorNumber = number;
         }
 
-        public owIdentifier DeviceId
+        public Identifier DeviceId
         {
             get { return _deviceId; }
         }

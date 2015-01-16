@@ -2,19 +2,19 @@ using System.Text;
 
 namespace OneWireAPI
 {
-    public class owIdentifier
+    public class Identifier
     {
         private readonly short[] _rawId;                // The raw ID array
         private readonly string _friendlyName;          // Friendly display name
         private readonly int _familyCode;               // Family code
 
-        public owIdentifier()
+        public Identifier()
         {
             // Create a blank ID
             _rawId = new short[8];
         }
 
-        public owIdentifier(byte[] deviceId)
+        public Identifier(byte[] deviceId)
         {
             // Create a blank ID
             _rawId = new short[8];
@@ -30,7 +30,7 @@ namespace OneWireAPI
             _familyCode = _rawId[0];
         }
 
-        public owIdentifier(short[] deviceId)
+        public Identifier(short[] deviceId)
         {
             // Store the ID supplied
             _rawId = deviceId;

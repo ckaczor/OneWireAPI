@@ -1,12 +1,12 @@
 namespace OneWireAPI
 {
-    public class owDeviceFamily12 : owDevice
+    public class DeviceFamily12 : Device
     {
         private const byte ChannelAccessCommand = 0xF5;
         private const byte WriteStatusCommand = 0x55;
         private const byte ReadStatusCommand = 0xAA;
 
-        public owDeviceFamily12(owSession session, short[] id)
+        public DeviceFamily12(Session session, short[] id)
             : base(session, id)
         {
             // Just call the base constructor
@@ -54,7 +54,7 @@ namespace OneWireAPI
         public byte[] ReadDevice()
         {
             // Select and access the ID of the device we want to talk to
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Data buffer to send over the network
             var data = new byte[30];
@@ -74,10 +74,10 @@ namespace OneWireAPI
                 data[dataCount++] = 0xFF;
 
             // Send the data
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Calculate the CRC
-            var crcResult = owCRC16.Calculate(data, 0, 4);
+            var crcResult = Crc16.Calculate(data, 0, 4);
 
             // Assemble the CRC provided by the device
             var matchCrc = data[6] << 8;
@@ -88,7 +88,7 @@ namespace OneWireAPI
             if (crcResult != matchCrc)
             {
                 // Throw a CRC exception
-                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
             }
 
             var state = new byte[2];
@@ -111,13 +111,13 @@ namespace OneWireAPI
                 data[dataCount++] = 0xFF;
 
             // Select and access the ID of the device we want to talk to
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Send the data
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Calculate the CRC
-            crcResult = owCRC16.Calculate(data, 0, 3);
+            crcResult = Crc16.Calculate(data, 0, 3);
 
             // Assemble the CRC provided by the device
             matchCrc = data[5] << 8;
@@ -128,7 +128,7 @@ namespace OneWireAPI
             if (crcResult != matchCrc)
             {
                 // Throw a CRC exception
-                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
             }
 
             // Store the state data
@@ -140,7 +140,7 @@ namespace OneWireAPI
         public void WriteDevice(byte[] state)
         {
             // Select and access the ID of the device we want to talk to
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Data buffer to send over the network
             var data = new byte[30];
@@ -163,10 +163,10 @@ namespace OneWireAPI
             data[dataCount++] = 0xFF;
 
             // Send the data
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Calculate the CRC
-            var crcResult = owCRC16.Calculate(data, 0, 3);
+            var crcResult = Crc16.Calculate(data, 0, 3);
 
             // Assemble the CRC provided by the device
             var matchCrc = data[5] << 8;
@@ -177,7 +177,7 @@ namespace OneWireAPI
             if (crcResult != matchCrc)
             {
                 // Throw a CRC exception
-                throw new owException(owException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
             }
         }
     }

@@ -1,17 +1,17 @@
 namespace OneWireAPI
 {
-    public class owAdapter
+    public class Adapter
     {
-        private static owSession _session;
-        private static owIdentifier _lastId;
+        private static Session _session;
+        private static Identifier _lastId;
 
-        public static void Initialize(owSession session)
+        public static void Initialize(Session session)
         {
             // Store the session we are dealing with
             _session = session;
         }
 
-        public static void Select(owIdentifier id)
+        public static void Select(Identifier id)
         {
             // Set the ID of the device we want to talk to
             var result = TMEX.TMRom(_session.SessionHandle, _session.StateBuffer, id.RawId);
@@ -20,7 +20,7 @@ namespace OneWireAPI
             if (result != 1)
             {
                 // Throw a ROM exception
-                throw new owException(owException.ExceptionFunction.Select, id, result);
+                throw new OneWireException(OneWireException.ExceptionFunction.Select, id, result);
             }
 
             // Copy the ID as the last selected ID
@@ -39,7 +39,7 @@ namespace OneWireAPI
             if (result != 1)
             {
                 // Throw an access exception
-                throw new owException(owException.ExceptionFunction.Access, _lastId, result);
+                throw new OneWireException(OneWireException.ExceptionFunction.Access, _lastId, result);
             }
         }
 
@@ -52,7 +52,7 @@ namespace OneWireAPI
             if (result != byteCount)
             {
                 // Throw an access exception
-                throw new owException(owException.ExceptionFunction.SendBlock, _lastId, result);
+                throw new OneWireException(OneWireException.ExceptionFunction.SendBlock, _lastId, result);
             }
 
             // Return the result
@@ -68,7 +68,7 @@ namespace OneWireAPI
             if (result != byteCount)
             {
                 // Throw an access exception
-                throw new owException(owException.ExceptionFunction.SendBlock, _lastId, result);
+                throw new OneWireException(OneWireException.ExceptionFunction.SendBlock, _lastId, result);
             }
 
             // Return the result
@@ -93,7 +93,7 @@ namespace OneWireAPI
             if (result != output)
             {
                 // Throw an exception
-                throw new owException(owException.ExceptionFunction.SendBit, _lastId);
+                throw new OneWireException(OneWireException.ExceptionFunction.SendBit, _lastId);
             }
 
             // Return the result
@@ -124,7 +124,7 @@ namespace OneWireAPI
             if (result != output)
             {
                 // Throw an exception
-                throw new owException(owException.ExceptionFunction.SendByte, _lastId);
+                throw new OneWireException(OneWireException.ExceptionFunction.SendByte, _lastId);
             }
 
             // Return the result
@@ -140,7 +140,7 @@ namespace OneWireAPI
             if (result < 0)
             {
                 // Throw an exception
-                throw new owException(owException.ExceptionFunction.SetLevel, result);
+                throw new OneWireException(OneWireException.ExceptionFunction.SetLevel, result);
             }
 
             // Return the result

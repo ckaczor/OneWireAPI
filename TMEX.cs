@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace OneWireAPI
 {
+    // ReSharper disable once InconsistentNaming
     public class TMEX
     {
         // Size of the global state buffer

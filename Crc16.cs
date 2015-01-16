@@ -1,6 +1,6 @@
 namespace OneWireAPI
 {
-    internal class owCRC16
+    internal class Crc16
     {
         private static readonly short[] OddParity = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
 

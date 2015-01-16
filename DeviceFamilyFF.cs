@@ -1,11 +1,12 @@
 namespace OneWireAPI
 {
-    public class owDeviceFamilyFF : owDevice
+    // ReSharper disable once InconsistentNaming
+    public class DeviceFamilyFF : Device
     {
         private int _width = 20;
         private int _height = 4;
 
-        public owDeviceFamilyFF(owSession session, short[] id)
+        public DeviceFamilyFF(Session session, short[] id)
             : base(session, id)
         {
             // Just call the base constructor
@@ -20,28 +21,28 @@ namespace OneWireAPI
         public void SetBackLight(bool state)
         {
             // Select the device
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Set the state of the backlight
-            owAdapter.SendByte((short) (state ? 0x8 : 0x7));
+            Adapter.SendByte((short) (state ? 0x8 : 0x7));
         }
 
         public void SetText(string text)
         {
             // Line number
-            var line = 1;
+            var lineNumber = 1;
 
             // Replace any CRLF pairs with just a newline
             text = text.Replace("\r\n", "\n");
 
             // Split the input string at any newlines
-            var sLines = text.Split("\n".ToCharArray(), _height);
+            var lines = text.Split("\n".ToCharArray(), _height);
 
             // Loop over each line
-            foreach (var sLine in sLines)
+            foreach (var line in lines)
             {
                 // Set the text of this line
-                SetText(sLine, line++);
+                SetText(line, lineNumber++);
             }
         }
 
@@ -86,7 +87,7 @@ namespace OneWireAPI
             if (_width > 16)
             {
                 // Select the device
-                owAdapter.Select(DeviceId);
+                Adapter.Select(DeviceId);
 
                 // Set the data block to just the first 16 characters
                 sendData = text.Substring(0, 16);
@@ -105,16 +106,16 @@ namespace OneWireAPI
                     data[dataCount++] = bChar;
 
                 // Set the block
-                owAdapter.SendBlock(data, dataCount);
+                Adapter.SendBlock(data, dataCount);
 
                 // Select the device
-                owAdapter.Select(DeviceId);
+                Adapter.Select(DeviceId);
 
                 // Send the scratchpad data to the LCD
-                owAdapter.SendByte(0x48);
+                Adapter.SendByte(0x48);
 
                 // Reset the device
-                owAdapter.Reset();
+                Adapter.Reset();
 
                 // Increment the memory position
                 memoryPosition += 16;
@@ -129,7 +130,7 @@ namespace OneWireAPI
             }
 
             // Select the device
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Initialize the data array
             data = new byte[18];
@@ -148,25 +149,25 @@ namespace OneWireAPI
                 data[dataCount++] = bChar;
 
             // Set the block
-            owAdapter.SendBlock(data, dataCount);
+            Adapter.SendBlock(data, dataCount);
 
             // Select the device
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Send the scratchpad data to the LCD
-            owAdapter.SendByte(0x48);
+            Adapter.SendByte(0x48);
 
             // Reset the device
-            owAdapter.Reset();
+            Adapter.Reset();
         }
 
         public void Clear()
         {
             // Select the device
-            owAdapter.Select(DeviceId);
+            Adapter.Select(DeviceId);
 
             // Clear the display
-            owAdapter.SendByte(0x49);
+            Adapter.SendByte(0x49);
         }
     }
 }

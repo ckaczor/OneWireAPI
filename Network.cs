@@ -2,19 +2,19 @@ using System.Collections.Generic;
 
 namespace OneWireAPI
 {
-    public class owNetwork 
+    public class Network
     {
-        private owSession _session;                             // Current session
-        private Dictionary<string, owDevice> _deviceList;       // List of current devices
+        private Session _session;                             // Current session
+        private Dictionary<string, Device> _deviceList;       // List of current devices
 
-        public owNetwork(owSession session)
+        public Network(Session session)
         {
             _session = session;
 
-            _deviceList = new Dictionary<string, owDevice>();
+            _deviceList = new Dictionary<string, Device>();
         }
 
-        public delegate void DeviceEventDelegate(owDevice device);
+        public delegate void DeviceEventDelegate(Device device);
 
         public event DeviceEventDelegate DeviceAdded;
 
@@ -36,33 +36,33 @@ namespace OneWireAPI
                 if (nResult == 1)
                 {
                     // Get the deviceID
-                    var deviceId = new owIdentifier(id);
+                    var deviceId = new Identifier(id);
 
                     // Create a new device object
-                    owDevice device;
-              
+                    Device device;
+
                     switch (deviceId.Family)
                     {
                         case 0x10:
-                            device = new owDeviceFamily10(_session, id);
+                            device = new DeviceFamily10(_session, id);
                             break;
                         case 0x1D:
-                            device = new owDeviceFamily1D(_session, id);
+                            device = new DeviceFamily1D(_session, id);
                             break;
                         case 0x20:
-                            device = new owDeviceFamily20(_session, id);
+                            device = new DeviceFamily20(_session, id);
                             break;
                         case 0x26:
-                            device = new owDeviceFamily26(_session, id);
+                            device = new DeviceFamily26(_session, id);
                             break;
                         case 0x12:
-                            device = new owDeviceFamily12(_session, id);
+                            device = new DeviceFamily12(_session, id);
                             break;
                         case 0xFF:
-                            device = new owDeviceFamilyFF(_session, id);
+                            device = new DeviceFamilyFF(_session, id);
                             break;
                         default:
-                            device = new owDevice(_session, id);
+                            device = new Device(_session, id);
                             break;
                     }
 
@@ -75,7 +75,7 @@ namespace OneWireAPI
                         // Raise the device added event
                         if (DeviceAdded != null)
                             DeviceAdded(device);
-                    }                    
+                    }
                 }
 
                 // Try to get the next device
@@ -83,7 +83,7 @@ namespace OneWireAPI
             }
         }
 
-        public Dictionary<string, owDevice> Devices
+        public Dictionary<string, Device> Devices
         {
             get { return _deviceList; }
         }
@@ -103,5 +103,5 @@ namespace OneWireAPI
             // Get rid of the session
             _session = null;
         }
-    }    
+    }
 }

@@ -1,20 +1,20 @@
 namespace OneWireAPI
 {
-    public class owDevice
+    public class Device
     {
-        protected owSession Session;
-        protected owIdentifier DeviceId;
+        protected Session Session;
+        protected Identifier DeviceId;
 
-        public owDevice(owSession session, short[] rawId)
+        public Device(Session session, short[] rawId)
         {
             // Store the session
             Session = session;
 
             // Create a new identifier and give it the ID supplied
-            DeviceId = new owIdentifier(rawId);
+            DeviceId = new Identifier(rawId);
         }
 
-        public owIdentifier Id
+        public Identifier Id
         {
             get { return DeviceId; }
         }
