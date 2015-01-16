@@ -4,14 +4,15 @@ namespace OneWireAPI
 {
     public class Network
     {
-        private Session _session;                             // Current session
-        private Dictionary<string, Device> _deviceList;       // List of current devices
+        private Session _session;
+
+        public Dictionary<string, Device> Devices { get; private set; }
 
         public Network(Session session)
         {
             _session = session;
 
-            _deviceList = new Dictionary<string, Device>();
+            Devices = new Dictionary<string, Device>();
         }
 
         public delegate void DeviceEventDelegate(Device device);
@@ -67,10 +68,10 @@ namespace OneWireAPI
                     }
 
                     // Check if we've seen this device before
-                    if (!_deviceList.ContainsKey(device.Id.Name))
+                    if (!Devices.ContainsKey(device.Id.Name))
                     {
                         // Add the device to the device list
-                        _deviceList[device.Id.Name] = device;
+                        Devices[device.Id.Name] = device;
 
                         // Raise the device added event
                         if (DeviceAdded != null)
@@ -83,11 +84,6 @@ namespace OneWireAPI
             }
         }
 
-        public Dictionary<string, Device> Devices
-        {
-            get { return _deviceList; }
-        }
-
         public void Initialize()
         {
             // Load the device list 
@@ -97,8 +93,8 @@ namespace OneWireAPI
         public void Terminate()
         {
             // Get rid of the device list
-            _deviceList.Clear();
-            _deviceList = null;
+            Devices.Clear();
+            Devices = null;
 
             // Get rid of the session
             _session = null;

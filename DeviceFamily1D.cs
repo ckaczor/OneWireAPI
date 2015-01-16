@@ -11,7 +11,7 @@ namespace OneWireAPI
         public uint GetCounter(int counterPage)
         {
             // Select and access the ID of the device we want to talk to
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Data buffer to send over the network
             var data = new byte[30];
@@ -49,7 +49,7 @@ namespace OneWireAPI
             if (crcResult != matchCrc)
             {
                 // Throw a CRC exception
-                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, Id);
             }
 
             uint counter = 0;

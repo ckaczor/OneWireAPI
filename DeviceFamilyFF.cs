@@ -21,7 +21,7 @@ namespace OneWireAPI
         public void SetBackLight(bool state)
         {
             // Select the device
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Set the state of the backlight
             Adapter.SendByte((short) (state ? 0x8 : 0x7));
@@ -87,7 +87,7 @@ namespace OneWireAPI
             if (_width > 16)
             {
                 // Select the device
-                Adapter.Select(DeviceId);
+                Adapter.Select(Id);
 
                 // Set the data block to just the first 16 characters
                 sendData = text.Substring(0, 16);
@@ -109,7 +109,7 @@ namespace OneWireAPI
                 Adapter.SendBlock(data, dataCount);
 
                 // Select the device
-                Adapter.Select(DeviceId);
+                Adapter.Select(Id);
 
                 // Send the scratchpad data to the LCD
                 Adapter.SendByte(0x48);
@@ -130,7 +130,7 @@ namespace OneWireAPI
             }
 
             // Select the device
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Initialize the data array
             data = new byte[18];
@@ -152,7 +152,7 @@ namespace OneWireAPI
             Adapter.SendBlock(data, dataCount);
 
             // Select the device
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Send the scratchpad data to the LCD
             Adapter.SendByte(0x48);
@@ -164,7 +164,7 @@ namespace OneWireAPI
         public void Clear()
         {
             // Select the device
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Clear the display
             Adapter.SendByte(0x49);

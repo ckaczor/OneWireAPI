@@ -53,7 +53,7 @@ namespace OneWireAPI
             data[dataCount++] = (startAddress >> 8) & 0xFF;
 
             // Select and access the ID of the device we want to talk to
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Write to the data pages specified
             for (var index = startAddress; index <= endAddress; index++)
@@ -75,7 +75,7 @@ namespace OneWireAPI
                 if (data[dataCount - 1] != _control[index - startAddress])
                 {
                     // Throw an exception
-                    throw new OneWireException(OneWireException.ExceptionFunction.SendBlock, DeviceId);
+                    throw new OneWireException(OneWireException.ExceptionFunction.SendBlock, Id);
                 }
 
                 int calculatedCrc;							// CRC we calculated from sent data
@@ -107,7 +107,7 @@ namespace OneWireAPI
                 if (calculatedCrc != sentCrc)
                 {
                     // Throw a CRC exception
-                    throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
+                    throw new OneWireException(OneWireException.ExceptionFunction.Crc, Id);
                 }
 
                 // Reset the byte count
@@ -118,7 +118,7 @@ namespace OneWireAPI
         public double[] GetVoltages()
         {
             // Select and access the ID of the device we want to talk to
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Data buffer to send over the network
             var data = new byte[30];
@@ -154,18 +154,18 @@ namespace OneWireAPI
             if (calculatedCrc != sentCrc)
             {
                 // Throw a CRC exception
-                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, Id);
             }
 
             // Setup for for power delivery after the next byte
             Adapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.StrongPullup, TMEX.LevelPrime.AfterNextByte);
 
-            var nTransmitByte = (short) ((dataCount - 1) & 0x1F);
+            var transmitByte = (short) ((dataCount - 1) & 0x1F);
 
             try
             {
                 // Send the byte and start strong pullup
-                Adapter.SendByte(nTransmitByte);
+                Adapter.SendByte(transmitByte);
             }
             catch
             {
@@ -186,7 +186,7 @@ namespace OneWireAPI
             Adapter.ReadByte();
 
             // Select and access the ID of the device we want to talk to
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Reinitialize the data count
             dataCount = 0;
@@ -217,7 +217,7 @@ namespace OneWireAPI
             if (calculatedCrc != sentCrc)
             {
                 // Throw a CRC exception
-                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, Id);
             }
 
             // Voltage values to return

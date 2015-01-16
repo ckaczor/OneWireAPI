@@ -5,57 +5,41 @@ namespace OneWireAPI
 {
     public class Session
     {
-        private int _sessionHandle;                 // Session handle
-        private Network _network;                 // Network object
+        public short PortNumber { get; private set; }
 
-        private readonly short _portNumber;         // Port number
-        private readonly short _portType;           // Port type
-        private readonly byte[] _stateBuffer;       // Global state buffer
+        public short PortType { get; private set; }
+
+        public int SessionHandle { get; private set; }
+
+        public Network Network { get; private set; }
+
+        public byte[] StateBuffer { get; private set; }
 
         public Session()
         {
             // Create the global state buffer
-            _stateBuffer = new byte[(int) TMEX.StateBufferSize.NoEpromWriting];
+            StateBuffer = new byte[(int) TMEX.StateBufferSize.NoEpromWriting];
+
+            short portNumber;
+            short portType;
 
             // Get the default port number and type from the system
-            var result = TMEX.TMReadDefaultPort(out _portNumber, out _portType);
+            var result = TMEX.TMReadDefaultPort(out portNumber, out portType);
 
-            Tracer.WriteLine("TMReadDefaultPort - Return: {0}, Port Number: {1}, Port Type: {2}", result, _portNumber, _portType);
+            PortNumber = portNumber;
+            PortType = portType;
+
+            Tracer.WriteLine("TMReadDefaultPort - Return: {0}, Port Number: {1}, Port Type: {2}", result, PortNumber, PortType);
         }
 
         public Session(short portNumber, short portType)
         {
             // Create the global state buffer
-            _stateBuffer = new byte[(int) TMEX.StateBufferSize.NoEpromWriting];
+            StateBuffer = new byte[(int) TMEX.StateBufferSize.NoEpromWriting];
 
             // Store the port number and type specified
-            _portNumber = portNumber;
-            _portType = portType;
-        }
-
-        public short PortNumber
-        {
-            get { return _portNumber; }
-        }
-
-        public short PortType
-        {
-            get { return _portType; }
-        }
-
-        public int SessionHandle
-        {
-            get { return _sessionHandle; }
-        }
-
-        public Network Network
-        {
-            get { return _network; }
-        }
-
-        public byte[] StateBuffer
-        {
-            get { return _stateBuffer; }
+            PortNumber = portNumber;
+            PortType = portType;
         }
 
         public bool Acquire()
@@ -77,16 +61,16 @@ namespace OneWireAPI
             Tracer.WriteLine("Starting Aquire");
 
             // Start a session on the port
-            _sessionHandle = TMEX.TMExtendedStartSession(_portNumber, _portType, IntPtr.Zero);
+            SessionHandle = TMEX.TMExtendedStartSession(PortNumber, PortType, IntPtr.Zero);
 
-            Tracer.WriteLine("TMExtendedStartSession - Return: {0}", _sessionHandle);
+            Tracer.WriteLine("TMExtendedStartSession - Return: {0}", SessionHandle);
 
             // If we didn't get a session then throw an error
-            if (_sessionHandle <= 0)
+            if (SessionHandle <= 0)
                 return false;
 
             // Setup the port for the current session
-            var result = TMEX.TMSetup(_sessionHandle);
+            var result = TMEX.TMSetup(SessionHandle);
 
             Tracer.WriteLine("TMSetup - Return: {0}", result);
 
@@ -100,10 +84,10 @@ namespace OneWireAPI
             }
 
             // Create the network object and pass ourself as the session
-            _network = new Network(this);
+            Network = new Network(this);
 
             // Initialize the network
-            _network.Initialize();
+            Network.Initialize();
 
             // Initialize the static adapter code with the session
             Adapter.Initialize(this);
@@ -116,24 +100,24 @@ namespace OneWireAPI
             Tracer.WriteLine("Starting Release");
 
             // Terminate the network
-            if (_network != null)
+            if (Network != null)
             {
-                _network.Terminate();
-                _network = null;
+                Network.Terminate();
+                Network = null;
             }
 
             // Close the session
-            var result = TMEX.TMClose(_sessionHandle);
+            var result = TMEX.TMClose(SessionHandle);
 
             Tracer.WriteLine("TMClose - Return: {0}", result);
 
             // End the session
-            result = TMEX.TMEndSession(_sessionHandle);
+            result = TMEX.TMEndSession(SessionHandle);
 
             Tracer.WriteLine("TMEndSession - Return: {0}", result);
 
             // Clear the session variable
-            _sessionHandle = 0;
+            SessionHandle = 0;
         }
     }
 }

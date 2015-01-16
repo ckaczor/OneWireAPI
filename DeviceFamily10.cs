@@ -11,7 +11,7 @@ namespace OneWireAPI
         public double GetTemperature()
         {
             // Select and access the ID of the device we want to talk to
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Setup for for power delivery after the next byte
             Adapter.SetLevel(TMEX.LevelOperation.Write, TMEX.LevelMode.StrongPullup, TMEX.LevelPrime.AfterNextByte);
@@ -62,7 +62,7 @@ namespace OneWireAPI
             if (crc != data[9])
             {
                 // Throw a CRC exception
-                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, Id);
             }
 
             // Get the LSB of the temperature data and divide it by two

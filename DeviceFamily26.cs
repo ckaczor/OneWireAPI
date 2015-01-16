@@ -19,7 +19,7 @@ namespace OneWireAPI
             short busy;
 
             // Select and access the ID of the device we want to talk to
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Data buffer to send over the network
             var data = new byte[30];
@@ -62,7 +62,7 @@ namespace OneWireAPI
             if (crc != data[10])
             {
                 // Throw a CRC exception
-                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, Id);
             }
 
             // TODO - Check if we really need to change the input selector
@@ -170,7 +170,7 @@ namespace OneWireAPI
             if (crc != data[10])
             {
                 // Throw a CRC exception
-                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, Id);
             }
 
             // Assemble the voltage data
@@ -193,7 +193,7 @@ namespace OneWireAPI
         public double GetTemperature()
         {
             // Select and access the ID of the device we want to talk to
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Send the conversion command byte 
             Adapter.SendByte(0x44);
@@ -245,7 +245,7 @@ namespace OneWireAPI
             if (crc != data[10])
             {
                 // Throw a CRC exception
-                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, Id);
             }
 
             // Get the two bytes of temperature data
@@ -253,10 +253,10 @@ namespace OneWireAPI
             int temperatureMsb = data[4];
 
             // Shift the data into the right order
-            var iTemperature = ((temperatureMsb << 8) | temperatureLsb) >> 3;
+            var temperature = ((temperatureMsb << 8) | temperatureLsb) >> 3;
 
             // Return the temperature
-            return iTemperature * 0.03125F;
+            return temperature * 0.03125F;
         }
     }
 }

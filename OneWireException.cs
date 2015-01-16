@@ -18,55 +18,47 @@ namespace OneWireAPI
             SetLevel
         }
 
-        private readonly int _errorNumber;
-        private readonly ExceptionFunction _errorFunction;
-        private readonly Identifier _deviceId;
+        public Identifier DeviceId { get; private set; }
+
+        public ExceptionFunction Function { get; private set; }
+
+        public int Number { get; private set; }
 
         public OneWireException(ExceptionFunction function, int number)
         {
             // Store the exception function
-            _errorFunction = function;
+            Function = function;
 
             // Store the exception number
-            _errorNumber = number;
+            Number = number;
         }
 
         public OneWireException(ExceptionFunction function, Identifier deviceId)
         {
             // Store the exception function
-            _errorFunction = function;
+            Function = function;
 
             // Store the device ID
-            _deviceId = deviceId;
+            DeviceId = deviceId;
         }
 
         public OneWireException(ExceptionFunction function, Identifier deviceId, int number)
         {
             // Store the exception function
-            _errorFunction = function;
+            Function = function;
 
             // Store the device ID
-            _deviceId = deviceId;
+            DeviceId = deviceId;
 
             // Store the exception number
-            _errorNumber = number;
-        }
-
-        public Identifier DeviceId
-        {
-            get { return _deviceId; }
-        }
-
-        public ExceptionFunction Function
-        {
-            get { return _errorFunction; }
+            Number = number;
         }
 
         public override string Message
         {
             get
             {
-                switch (_errorFunction)
+                switch (Function)
                 {
                     case ExceptionFunction.Access:
                         return "Unable to access device";
@@ -87,14 +79,9 @@ namespace OneWireAPI
                     case ExceptionFunction.SetLevel:
                         return "Error setting level";
                     default:
-                        return "Unknown error in function" + _errorFunction;
+                        return "Unknown error in function" + Function;
                 }
             }
-        }
-
-        public int Number
-        {
-            get { return _errorNumber; }
         }
     }
 }

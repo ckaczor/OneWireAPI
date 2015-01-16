@@ -4,30 +4,30 @@ namespace OneWireAPI
     {
         private static readonly short[] OddParity = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
 
-        public static int Calculate(byte[] nData, int iStart, int iEnd)
+        public static int Calculate(byte[] data, int start, int end)
         {
-            return Calculate(nData, iStart, iEnd, 0);
+            return Calculate(data, start, end, 0);
         }
 
-        public static int Calculate(byte nData, int iInitialValue)
+        public static int Calculate(byte data, int initialValue)
         {
-            var aData = new byte[1];
+            var bytes = new byte[1];
 
-            aData[0] = nData;
+            bytes[0] = data;
 
-            return Calculate(aData, 0, 0, iInitialValue);
+            return Calculate(bytes, 0, 0, initialValue);
         }
 
-        public static int Calculate(byte[] nData, int iStart, int iEnd, int iInitialValue)
+        public static int Calculate(byte[] data, int start, int end, int iInitialValue)
         {
             int index;								// Loop index
             var currentCrc = iInitialValue;	        // Current CRC accumulator
 
             // Loop over all bytes in the input array
-            for (index = iStart; index <= iEnd; index++)
+            for (index = start; index <= end; index++)
             {
                 // Get the current element of data
-                int iBuffer = nData[index];
+                int iBuffer = data[index];
 
                 // Calculate the current CRC for this position
                 iBuffer = (iBuffer ^ (currentCrc & 0xFF)) & 0xFF;

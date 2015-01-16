@@ -3,7 +3,8 @@ namespace OneWireAPI
     public class Device
     {
         protected Session Session;
-        protected Identifier DeviceId;
+
+        public Identifier Id { get; protected set; }
 
         public Device(Session session, short[] rawId)
         {
@@ -11,17 +12,12 @@ namespace OneWireAPI
             Session = session;
 
             // Create a new identifier and give it the ID supplied
-            DeviceId = new Identifier(rawId);
-        }
-
-        public Identifier Id
-        {
-            get { return DeviceId; }
+            Id = new Identifier(rawId);
         }
 
         public int Family
         {
-            get { return DeviceId.Family; }
+            get { return Id.Family; }
         }
     }
 }

@@ -54,7 +54,7 @@ namespace OneWireAPI
         public byte[] ReadDevice()
         {
             // Select and access the ID of the device we want to talk to
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Data buffer to send over the network
             var data = new byte[30];
@@ -88,7 +88,7 @@ namespace OneWireAPI
             if (crcResult != matchCrc)
             {
                 // Throw a CRC exception
-                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, Id);
             }
 
             var state = new byte[2];
@@ -111,7 +111,7 @@ namespace OneWireAPI
                 data[dataCount++] = 0xFF;
 
             // Select and access the ID of the device we want to talk to
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Send the data
             Adapter.SendBlock(data, dataCount);
@@ -128,7 +128,7 @@ namespace OneWireAPI
             if (crcResult != matchCrc)
             {
                 // Throw a CRC exception
-                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, Id);
             }
 
             // Store the state data
@@ -140,7 +140,7 @@ namespace OneWireAPI
         public void WriteDevice(byte[] state)
         {
             // Select and access the ID of the device we want to talk to
-            Adapter.Select(DeviceId);
+            Adapter.Select(Id);
 
             // Data buffer to send over the network
             var data = new byte[30];
@@ -177,7 +177,7 @@ namespace OneWireAPI
             if (crcResult != matchCrc)
             {
                 // Throw a CRC exception
-                throw new OneWireException(OneWireException.ExceptionFunction.Crc, DeviceId);
+                throw new OneWireException(OneWireException.ExceptionFunction.Crc, Id);
             }
         }
     }
