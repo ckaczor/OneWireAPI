@@ -177,7 +177,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Common\Common.csproj">
+    <ProjectReference Include="Common\Common.csproj">
       <Project>{17864d82-457d-4a0a-bc10-1d07f2b3a5d6}</Project>
       <Name>Common</Name>
     </ProjectReference>
